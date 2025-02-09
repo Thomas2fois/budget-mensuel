@@ -1,0 +1,523 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gestion Financière</title>
+  <style>
+    /* Reset de base */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      background-color: #f5f5f7;
+      color: #1d1d1f;
+      line-height: 1.6;
+      padding: 20px;
+    }
+
+    header {
+      background-color: #ffffff;
+      color: #1d1d1f;
+      padding: 20px;
+      text-align: center;
+      margin-bottom: 20px;
+      border-radius: 12px;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+
+    header h1 {
+      font-size: 1.8rem;
+      font-weight: 600;
+    }
+
+    main {
+      max-width: 400px;
+      margin: 0 auto;
+    }
+
+    .section {
+      background-color: white;
+      padding: 20px;
+      margin-bottom: 20px;
+      border-radius: 12px;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+
+    .section h2 {
+      font-size: 1.2rem;
+      font-weight: 600;
+      margin-bottom: 16px;
+      color: #1d1d1f;
+    }
+
+    .item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 0;
+      border-bottom: 1px solid #e0e0e0;
+      position: relative;
+    }
+
+    .item:last-child {
+      border-bottom: none;
+    }
+
+    .item .category,
+    .item .amount {
+      font-size: 1rem;
+      color: #1d1d1f;
+      cursor: pointer;
+    }
+
+    .item .category:hover,
+    .item .amount:hover {
+      color: #007aff;
+      text-decoration: underline;
+    }
+
+    .total {
+      font-weight: bold;
+      background-color: #f8f8f8;
+      padding: 12px;
+      border-radius: 8px;
+      margin-top: 10px;
+    }
+
+    .add-button {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      background-color: #007aff;
+      color: white;
+      border: none;
+      padding: 5px;
+      border-radius: 8px;
+      cursor: pointer;
+      margin-top: 10px;
+      font-size: 0.9rem;
+      width: 30px;
+      height: 30px;
+    }
+
+    .add-button:hover {
+      background-color: #005bb5;
+    }
+
+    .delete-button {
+      display: none;
+      background: none;
+      border: none;
+      color: #ff3b30;
+      cursor: pointer;
+      font-size: 1rem;
+    }
+
+    .item.active .delete-button {
+      display: block;
+    }
+
+    input[type="text"],
+    input[type="number"] {
+      width: 100px;
+      padding: 5px;
+      border: 1px solid #e0e0e0;
+      border-radius: 8px;
+      font-size: 0.9rem;
+      text-align: left;
+    }
+
+    .icon {
+      margin-right: 8px;
+    }
+
+    .month-selector {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 20px;
+    }
+
+    .month-selector button {
+      background-color: #007aff;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 1rem;
+      transition: background-color 0.3s ease;
+    }
+
+    .month-selector button:hover {
+      background-color: #005bb5;
+    }
+
+    .month-selector button:disabled {
+      background-color: #a0a0a0;
+      cursor: not-allowed;
+    }
+
+    @media (max-width: 768px) {
+      body {
+        padding: 10px;
+      }
+
+      header h1 {
+        font-size: 1.5rem;
+      }
+
+      .section {
+        padding: 16px;
+      }
+
+      .item .category,
+      .item .amount {
+        font-size: 0.9rem;
+      }
+    }
+  </style>
+ <!-- Remplacez les scripts Firebase par la version compat v9 -->
+<script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
+</head>
+<body>
+  <header>
+    <h1>Budget Mensuel - 2025</h1>
+  </header>
+
+  <main>
+    <!-- Sélecteur de mois -->
+    <div class="month-selector">
+      <button id="prev-month" disabled>←</button>
+      <span id="current-month">Janvier</span>
+      <button id="next-month">→</button>
+    </div>
+
+    <!-- Section Revenus -->
+    <div class="section">
+      <h2>Revenus</h2>
+      <div id="revenus">
+        <!-- Les revenus seront insérés ici via JavaScript -->
+      </div>
+      <button class="add-button" onclick="addRow('revenus')">➕</button>
+      <div class="total" id="total-revenus">
+        <!-- Le total des revenus sera inséré ici via JavaScript -->
+      </div>
+    </div>
+
+    <!-- Section Charges -->
+    <div class="section">
+      <h2>Charges</h2>
+      <div id="charges">
+        <!-- Les charges seront insérées ici via JavaScript -->
+      </div>
+      <button class="add-button" onclick="addRow('charges')">➕</button>
+      <div class="total" id="total-charges">
+        <!-- Le total des charges sera inséré ici via JavaScript -->
+      </div>
+    </div>
+
+    <!-- Section Épargne -->
+    <div class="section">
+      <h2>Épargne</h2>
+      <div id="epargne">
+        <!-- Les données d'épargne seront insérées ici via JavaScript -->
+      </div>
+    </div>
+
+    <!-- Section Restant -->
+    <div class="section">
+      <h2>Restant</h2>
+      <div class="item">
+        <span class="category">Restant</span>
+        <span class="amount" id="restant">0 €</span>
+      </div>
+    </div>
+  </main>
+
+  <script>
+
+
+
+  // Initialisation de Firebase
+const firebaseConfig = {
+  apiKey: "AIzaSyCyt94XDHjrK87gKUwaST01c7CBu_lgCB4",
+  authDomain: "budget-mensuel-52aa9.firebaseapp.com",
+  projectId: "budget-mensuel-52aa9",
+  storageBucket: "budget-mensuel-52aa9.appspot.com",
+  messagingSenderId: "675021368593",
+  appId: "1:675021368593:web:e64239a03c6cff30afb0b0",
+  measurementId: "G-RQB4R0744Y"
+};
+
+// Initialiser Firebase
+const app = firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+const db = firebase.firestore();
+
+// Gérer l'authentification
+auth.onAuthStateChanged((user) => {
+  if (user) {
+    // Utilisateur connecté
+    console.log("Utilisateur connecté :", user.email);
+    loadUserData(user.uid);
+  } else {
+    // Utilisateur non connecté, rediriger vers la page de connexion
+    window.location.href = "login.html";
+  }
+});
+
+// Ajoutez ces fonctions manquantes
+function saveUserData(userId) {
+    db.collection("userData").doc(userId).set({ monthlyData })
+      .then(() => console.log("Données sauvegardées !"))
+      .catch((error) => console.error("Erreur sauvegarde :", error));
+  }
+
+  function loadUserData(userId) {
+  db.collection("userData").doc(userId).get()
+    .then((doc) => {
+      if (doc.exists) {
+        const data = doc.data().monthlyData;
+        // Mettre à jour les propriétés de monthlyData sans réassigner la variable
+        Object.keys(data).forEach((month) => {
+          monthlyData[month] = data[month];
+        });
+        renderData();
+      }
+    })
+    .catch((error) => console.error("Erreur chargement :", error));
+}
+
+    // Données par défaut pour janvier
+    const defaultData = {
+      revenus: [
+        { category: "Salaire ALCYNOE", amount: 1779, icon: "💼" },
+        { category: "Télécom KNCO (Cleemy)", amount: 0, icon: "📞" },
+        { category: "Mutuelle Anna + Forfait", amount: 50, icon: "🏥" },
+        { category: "Cash", amount: 0, icon: "💵" },
+        { category: "Remboursement", amount: 0, icon: "🔄" },
+      ],
+      charges: [
+        { category: "Charges communes (Prêt, Assurances, EDF)", amount: 453, icon: "🏠" },
+        { category: "Revolut/Youtube Premium", amount: 20, icon: "📱" },
+        { category: "Canal +", amount: 10, icon: "📺" },
+        { category: "Spotify", amount: 19, icon: "🎵" },
+        { category: "HP Instant Ink", amount: 5, icon: "🖨️" },
+        { category: "Coiffeur", amount: 20, icon: "✂️" },
+        { category: "Tabac", amount: 30, icon: "🚬" },
+        { category: "Freebox", amount: 30, icon: "📶" },
+        { category: "Forfait 0685073807", amount: 10, icon: "📞" },
+        { category: "Forfait 0667753851", amount: 10, icon: "📞" },
+        { category: "Courses", amount: 190, icon: "🛒" },
+        { category: "Découvert mois précèdent", amount: 100, icon: "💸" },
+        { category: "Anniversaire", amount: 60, icon: "🎉" },
+      ],
+      epargne: [
+        { category: "Solde livret bleu", amount: 6750, icon: "💰" },
+        { category: "À épargner", amount: 600, icon: "💹" },
+      ],
+    };
+
+    // Données mensuelles pour tous les mois (initialisées avec les données de janvier)
+    let monthlyData = {
+      janvier: JSON.parse(JSON.stringify(defaultData)), // Copie profonde de defaultData
+      février: JSON.parse(JSON.stringify(defaultData)),
+      mars: JSON.parse(JSON.stringify(defaultData)),
+      avril: JSON.parse(JSON.stringify(defaultData)),
+      mai: JSON.parse(JSON.stringify(defaultData)),
+      juin: JSON.parse(JSON.stringify(defaultData)),
+      juillet: JSON.parse(JSON.stringify(defaultData)),
+      août: JSON.parse(JSON.stringify(defaultData)),
+      septembre: JSON.parse(JSON.stringify(defaultData)),
+      octobre: JSON.parse(JSON.stringify(defaultData)),
+      novembre: JSON.parse(JSON.stringify(defaultData)),
+      décembre: JSON.parse(JSON.stringify(defaultData)),
+    };
+
+    const months = Object.keys(monthlyData); // Liste des mois disponibles
+    let currentMonthIndex = 0; // Index du mois actuel
+
+    // Fonction pour formater un montant sans centimes
+    function formatAmount(amount) {
+      return `${Math.floor(amount)} €`;
+    }
+
+    // Fonction pour calculer les totaux
+    function calculateTotals() {
+      const currentMonthData = monthlyData[months[currentMonthIndex]];
+      const totals = {
+        revenus: currentMonthData.revenus.reduce((sum, row) => sum + row.amount, 0),
+        charges: currentMonthData.charges.reduce((sum, row) => sum + row.amount, 0),
+        epargne: currentMonthData.epargne.find((row) => row.category === "À épargner").amount,
+      };
+      totals.restant = totals.revenus - totals.charges - totals.epargne;
+      return totals;
+    }
+
+    // Fonction pour afficher les données
+    function renderData() {
+      const currentMonthData = monthlyData[months[currentMonthIndex]];
+      const totals = calculateTotals();
+
+      // Afficher les revenus
+      const revenusContainer = document.getElementById("revenus");
+      revenusContainer.innerHTML = currentMonthData.revenus
+        .map(
+          (row, index) => `
+          <div class="item" onclick="toggleDeleteButton(this)">
+            <span class="category" onclick="editCategory('revenus', ${index}, '${row.category}')">
+              <span class="icon">${row.icon}</span>${row.category}
+            </span>
+            <span class="amount" onclick="editAmount('revenus', ${index}, ${row.amount})">
+              ${formatAmount(row.amount)}
+            </span>
+            <button class="delete-button" onclick="deleteRow('revenus', ${index})">🗑️</button>
+          </div>
+        `
+        )
+        .join("");
+
+      // Afficher le total des revenus
+      document.getElementById("total-revenus").textContent = `Total des revenus : ${formatAmount(
+        totals.revenus
+      )}`;
+
+      // Afficher les charges
+      const chargesContainer = document.getElementById("charges");
+      chargesContainer.innerHTML = currentMonthData.charges
+        .map(
+          (row, index) => `
+          <div class="item" onclick="toggleDeleteButton(this)">
+            <span class="category" onclick="editCategory('charges', ${index}, '${row.category}')">
+              <span class="icon">${row.icon}</span>${row.category}
+            </span>
+            <span class="amount" onclick="editAmount('charges', ${index}, ${row.amount})">
+              ${formatAmount(row.amount)}
+            </span>
+            <button class="delete-button" onclick="deleteRow('charges', ${index})">🗑️</button>
+          </div>
+        `
+        )
+        .join("");
+
+      // Afficher le total des charges
+      document.getElementById("total-charges").textContent = `Total des charges : ${formatAmount(
+        totals.charges
+      )}`;
+
+      // Afficher l'épargne
+      const epargneContainer = document.getElementById("epargne");
+      epargneContainer.innerHTML = currentMonthData.epargne
+        .map(
+          (row, index) => `
+          <div class="item" onclick="toggleDeleteButton(this)">
+            <span class="category" onclick="editCategory('epargne', ${index}, '${row.category}')">
+              <span class="icon">${row.icon}</span>${row.category}
+            </span>
+            <span class="amount" onclick="editAmount('epargne', ${index}, ${row.amount})">
+              ${formatAmount(row.amount)}
+            </span>
+            <button class="delete-button" onclick="deleteRow('epargne', ${index})">🗑️</button>
+          </div>
+        `
+        )
+        .join("");
+
+      // Afficher le restant
+      document.getElementById("restant").textContent = formatAmount(totals.restant);
+
+      // Mettre à jour le mois affiché
+      document.getElementById("current-month").textContent =
+        months[currentMonthIndex].charAt(0).toUpperCase() + months[currentMonthIndex].slice(1);
+
+      // Activer/désactiver les boutons de navigation
+      document.getElementById("prev-month").disabled = currentMonthIndex === 0;
+      document.getElementById("next-month").disabled =
+        currentMonthIndex === months.length - 1;
+    }
+
+    // Fonction pour basculer le bouton de suppression
+    function toggleDeleteButton(item) {
+      item.classList.toggle("active");
+    }
+
+    function addRow(type) {
+  const defaultIcon = type === "revenus" ? "💼" : "🏠"; // Logo par défaut
+  monthlyData[months[currentMonthIndex]][type].push({ category: "Nouvelle catégorie", amount: 0, icon: defaultIcon });
+  renderData();
+  saveUserData(auth.currentUser.uid); // Sauvegarder les données après modification
+}
+
+function deleteRow(type, index) {
+  monthlyData[months[currentMonthIndex]][type].splice(index, 1);
+  renderData();
+  saveUserData(auth.currentUser.uid); // Sauvegarder les données après modification
+}
+
+function editAmount(type, index, currentAmount) {
+  const input = document.createElement("input");
+  input.type = "number";
+  input.value = currentAmount;
+  input.onblur = () => {
+    const newAmount = parseFloat(input.value);
+    if (!isNaN(newAmount)) {
+      monthlyData[months[currentMonthIndex]][type][index].amount = newAmount;
+      renderData(); // Recalculer les totaux
+      saveUserData(auth.currentUser.uid); // Sauvegarder les données après modification
+    }
+  };
+  const amountElement = document.querySelectorAll(`#${type} .item .amount`)[index];
+  amountElement.replaceWith(input);
+  input.focus();
+}
+
+function editCategory(type, index, currentCategory) {
+  const input = document.createElement("input");
+  input.type = "text";
+  input.value = currentCategory;
+  input.onblur = () => {
+    const newCategory = input.value.trim();
+    if (newCategory) {
+      monthlyData[months[currentMonthIndex]][type][index].category = newCategory;
+      renderData(); // Recalculer les totaux
+      saveUserData(auth.currentUser.uid); // Sauvegarder les données après modification
+    }
+  };
+  const categoryElement = document.querySelectorAll(`#${type} .item .category`)[index];
+  categoryElement.replaceWith(input);
+  input.focus();
+}
+
+// Redirection vers la page de connexion si l'utilisateur n'est pas connecté
+auth.onAuthStateChanged((user) => {
+  if (!user) {
+    window.location.href = "login.html";
+  }
+});
+    // Gestion des clics sur les boutons de navigation
+    document.getElementById("prev-month").addEventListener("click", () => {
+      if (currentMonthIndex > 0) {
+        currentMonthIndex--;
+        renderData();
+      }
+    });
+
+    document.getElementById("next-month").addEventListener("click", () => {
+      if (currentMonthIndex < months.length - 1) {
+        currentMonthIndex++;
+        renderData();
+      }
+    });
+
+    // Afficher les données au chargement de la page
+    document.addEventListener("DOMContentLoaded", renderData);
+  </script>
+</body>
+</html>

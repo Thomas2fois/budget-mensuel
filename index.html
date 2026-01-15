@@ -3,521 +3,213 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Gestion Financière</title>
+  <title>Gestion Financière 2026</title>
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
   <style>
-    /* Reset de base */
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
+    :root { --blue: #007aff; --bg: #f5f5f7; --card: #ffffff; --text: #1d1d1f; --red: #ff3b30; }
+    * { margin: 0; padding: 0; box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, sans-serif; }
+    body { background-color: var(--bg); color: var(--text); padding: env(safe-area-inset-top) 20px 40px; }
+    header { max-width: 500px; margin: 20px auto; display: flex; justify-content: space-between; align-items: baseline; }
+    header h1 { font-size: 28px; font-weight: 700; }
+    .year-badge { background: #e5e5ea; padding: 4px 10px; border-radius: 8px; font-size: 14px; font-weight: 600; margin-left: 8px; }
+    
+    main { max-width: 500px; margin: 0 auto; }
+    .month-nav { display: flex; justify-content: space-between; align-items: center; background: white; padding: 12px; border-radius: 16px; margin-bottom: 25px; box-shadow: 0 4px 12px rgba(0,0,0,0.03); }
+    .month-nav button { background: var(--blue); color: white; border: none; border-radius: 10px; width: 40px; height: 40px; cursor: pointer; font-size: 18px; display: flex; align-items: center; justify-content: center; transition: 0.2s; }
+    .month-nav button:active { transform: scale(0.95); opacity: 0.8; }
+    #current-month-display { font-weight: 600; font-size: 18px; }
 
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-      background-color: #f5f5f7;
-      color: #1d1d1f;
-      line-height: 1.6;
-      padding: 20px;
-    }
-
-    header {
-      background-color: #ffffff;
-      color: #1d1d1f;
-      padding: 20px;
-      text-align: center;
-      margin-bottom: 20px;
-      border-radius: 12px;
-      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-    }
-
-    header h1 {
-      font-size: 1.8rem;
-      font-weight: 600;
-    }
-
-    main {
-      max-width: 400px;
-      margin: 0 auto;
-    }
-
-    .section {
-      background-color: white;
-      padding: 20px;
-      margin-bottom: 20px;
-      border-radius: 12px;
-      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-    }
-
-    .section h2 {
-      font-size: 1.2rem;
-      font-weight: 600;
-      margin-bottom: 16px;
-      color: #1d1d1f;
-    }
-
-    .item {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 10px 0;
-      border-bottom: 1px solid #e0e0e0;
-      position: relative;
-    }
-
-    .item:last-child {
-      border-bottom: none;
-    }
-
-    .item .category,
-    .item .amount {
-      font-size: 1rem;
-      color: #1d1d1f;
-      cursor: pointer;
-    }
-
-    .item .category:hover,
-    .item .amount:hover {
-      color: #007aff;
-      text-decoration: underline;
-    }
-
-    .total {
-      font-weight: bold;
-      background-color: #f8f8f8;
-      padding: 12px;
-      border-radius: 8px;
-      margin-top: 10px;
-    }
-
-    .add-button {
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      background-color: #007aff;
-      color: white;
-      border: none;
-      padding: 5px;
-      border-radius: 8px;
-      cursor: pointer;
-      margin-top: 10px;
-      font-size: 0.9rem;
-      width: 30px;
-      height: 30px;
-    }
-
-    .add-button:hover {
-      background-color: #005bb5;
-    }
-
-    .delete-button {
-      display: none;
-      background: none;
-      border: none;
-      color: #ff3b30;
-      cursor: pointer;
-      font-size: 1rem;
-    }
-
-    .item.active .delete-button {
-      display: block;
-    }
-
-    input[type="text"],
-    input[type="number"] {
-      width: 100px;
-      padding: 5px;
-      border: 1px solid #e0e0e0;
-      border-radius: 8px;
-      font-size: 0.9rem;
-      text-align: left;
-    }
-
-    .icon {
-      margin-right: 8px;
-    }
-
-    .month-selector {
-      display: flex;
-      justify-content: space-between;
-      margin-bottom: 20px;
-    }
-
-    .month-selector button {
-      background-color: #007aff;
-      color: white;
-      border: none;
-      padding: 10px 20px;
-      border-radius: 8px;
-      cursor: pointer;
-      font-size: 1rem;
-      transition: background-color 0.3s ease;
-    }
-
-    .month-selector button:hover {
-      background-color: #005bb5;
-    }
-
-    .month-selector button:disabled {
-      background-color: #a0a0a0;
-      cursor: not-allowed;
-    }
-
-    @media (max-width: 768px) {
-      body {
-        padding: 10px;
-      }
-
-      header h1 {
-        font-size: 1.5rem;
-      }
-
-      .section {
-        padding: 16px;
-      }
-
-      .item .category,
-      .item .amount {
-        font-size: 0.9rem;
-      }
-    }
+    .section { background: var(--card); padding: 22px; border-radius: 20px; margin-bottom: 20px; box-shadow: 0 8px 24px rgba(0,0,0,0.04); }
+    .section h2 { font-size: 17px; font-weight: 600; margin-bottom: 18px; color: #8e8e93; text-transform: uppercase; letter-spacing: 0.5px; }
+    
+    .item { display: flex; justify-content: space-between; align-items: center; padding: 14px 0; border-bottom: 0.5px solid #f2f2f7; }
+    .item:last-child { border-bottom: none; }
+    .category { flex-grow: 1; font-size: 16px; cursor: pointer; }
+    .amount { font-weight: 600; font-size: 16px; color: var(--blue); cursor: pointer; }
+    
+    .add-btn { background: #f2f2f7; border: none; padding: 12px; border-radius: 12px; cursor: pointer; font-size: 15px; font-weight: 600; width: 100%; color: var(--blue); margin-top: 10px; }
+    .total-row { display: flex; justify-content: space-between; margin-top: 15px; padding-top: 15px; border-top: 2px solid #f2f2f7; font-weight: 700; font-size: 16px; }
+    
+    .summary-card { background: var(--blue); color: white; padding: 25px; border-radius: 24px; text-align: center; margin-bottom: 30px; box-shadow: 0 10px 20px rgba(0,122,255,0.2); }
+    .summary-label { opacity: 0.8; font-size: 14px; margin-bottom: 8px; }
+    .summary-value { font-size: 34px; font-weight: 800; }
+    
+    .delete-action { color: var(--red); font-size: 18px; margin-left: 15px; cursor: pointer; padding: 5px; }
+    .logout { color: var(--red); font-weight: 600; font-size: 14px; cursor: pointer; }
   </style>
- <!-- Remplacez les scripts Firebase par la version compat v9 -->
-<script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
 </head>
 <body>
   <header>
-    <h1>Budget Mensuel - 2025</h1>
+    <div><h1>Budget<span class="year-badge" id="year-label">2026</span></h1></div>
+    <span class="logout" onclick="firebase.auth().signOut()">Quitter</span>
   </header>
 
   <main>
-    <!-- Sélecteur de mois -->
-    <div class="month-selector">
-      <button id="prev-month" disabled>←</button>
-      <span id="current-month">Janvier</span>
-      <button id="next-month">→</button>
+    <div class="summary-card">
+      <div class="summary-label">Reste à vivre</div>
+      <div class="summary-value" id="restant">0 €</div>
     </div>
 
-    <!-- Section Revenus -->
-    <div class="section">
-      <h2>Revenus</h2>
-      <div id="revenus">
-        <!-- Les revenus seront insérés ici via JavaScript -->
-      </div>
-      <button class="add-button" onclick="addRow('revenus')">➕</button>
-      <div class="total" id="total-revenus">
-        <!-- Le total des revenus sera inséré ici via JavaScript -->
-      </div>
+    <div class="month-nav">
+      <button id="prev-month">❬</button>
+      <div id="current-month-display">Chargement...</div>
+      <button id="next-month">❭</button>
     </div>
 
-    <!-- Section Charges -->
-    <div class="section">
-      <h2>Charges</h2>
-      <div id="charges">
-        <!-- Les charges seront insérées ici via JavaScript -->
-      </div>
-      <button class="add-button" onclick="addRow('charges')">➕</button>
-      <div class="total" id="total-charges">
-        <!-- Le total des charges sera inséré ici via JavaScript -->
-      </div>
-    </div>
+    <div id="loader" style="text-align:center; padding: 40px;">Chargement de vos finances...</div>
 
-    <!-- Section Épargne -->
-    <div class="section">
-      <h2>Épargne</h2>
-      <div id="epargne">
-        <!-- Les données d'épargne seront insérées ici via JavaScript -->
+    <div id="app-content" style="display:none;">
+      <div class="section">
+        <h2>Revenus</h2>
+        <div id="revenus-list"></div>
+        <button class="add-btn" onclick="addRow('revenus')">+ Ajouter un revenu</button>
+        <div class="total-row"><span>Sous-total</span><span id="total-revenus">0 €</span></div>
       </div>
-    </div>
 
-    <!-- Section Restant -->
-    <div class="section">
-      <h2>Restant</h2>
-      <div class="item">
-        <span class="category">Restant</span>
-        <span class="amount" id="restant">0 €</span>
+      <div class="section">
+        <h2>Charges</h2>
+        <div id="charges-list"></div>
+        <button class="add-btn" onclick="addRow('charges')">+ Ajouter une charge</button>
+        <div class="total-row"><span>Sous-total</span><span id="total-charges">0 €</span></div>
       </div>
     </div>
   </main>
 
   <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyCyt94XDHjrK87gKUwaST01c7CBu_lgCB4",
+      authDomain: "budget-mensuel-52aa9.firebaseapp.com",
+      projectId: "budget-mensuel-52aa9",
+      storageBucket: "budget-mensuel-52aa9.appspot.com",
+      messagingSenderId: "675021368593",
+      appId: "1:675021368593:web:e64239a03c6cff30afb0b0"
+    };
 
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+    const months = ["Janvier", "Février", "Mars", "Avril", "Mai", "Juin", "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"];
+    
+    // On récupère la date réelle
+    let now = new Date();
+    let currentYear = now.getFullYear(); // Sera 2026 selon tes souhaits
+    let currentMonthIndex = now.getMonth();
+    let currentUser = null;
+    let userData = {}; 
 
+    document.getElementById('year-label').innerText = currentYear;
 
-  // Initialisation de Firebase
-const firebaseConfig = {
-  apiKey: "AIzaSyCyt94XDHjrK87gKUwaST01c7CBu_lgCB4",
-  authDomain: "budget-mensuel-52aa9.firebaseapp.com",
-  projectId: "budget-mensuel-52aa9",
-  storageBucket: "budget-mensuel-52aa9.appspot.com",
-  messagingSenderId: "675021368593",
-  appId: "1:675021368593:web:e64239a03c6cff30afb0b0",
-  measurementId: "G-RQB4R0744Y"
-};
-
-// Initialiser Firebase
-const app = firebase.initializeApp(firebaseConfig);
-const auth = firebase.auth();
-const db = firebase.firestore();
-
-// Gérer l'authentification
-auth.onAuthStateChanged((user) => {
-  if (user) {
-    // Utilisateur connecté
-    console.log("Utilisateur connecté :", user.email);
-    loadUserData(user.uid);
-  } else {
-    // Utilisateur non connecté, rediriger vers la page de connexion
-    window.location.href = "login.html";
-  }
-});
-
-// Ajoutez ces fonctions manquantes
-function saveUserData(userId) {
-    db.collection("userData").doc(userId).set({ monthlyData })
-      .then(() => console.log("Données sauvegardées !"))
-      .catch((error) => console.error("Erreur sauvegarde :", error));
-  }
-
-  function loadUserData(userId) {
-  db.collection("userData").doc(userId).get()
-    .then((doc) => {
-      if (doc.exists) {
-        const data = doc.data().monthlyData;
-        // Mettre à jour les propriétés de monthlyData sans réassigner la variable
-        Object.keys(data).forEach((month) => {
-          monthlyData[month] = data[month];
-        });
-        renderData();
+    firebase.auth().onAuthStateChanged(user => {
+      if (user) {
+        currentUser = user;
+        loadUserData();
+      } else {
+        window.location.href = "login.html";
       }
-    })
-    .catch((error) => console.error("Erreur chargement :", error));
-}
+    });
 
-    // Données par défaut pour janvier
-    const defaultData = {
-      revenus: [
-        { category: "Salaire ALCYNOE", amount: 1779, icon: "💼" },
-        { category: "Télécom KNCO (Cleemy)", amount: 0, icon: "📞" },
-        { category: "Mutuelle Anna + Forfait", amount: 50, icon: "🏥" },
-        { category: "Cash", amount: 0, icon: "💵" },
-        { category: "Remboursement", amount: 0, icon: "🔄" },
-      ],
-      charges: [
-        { category: "Charges communes (Prêt, Assurances, EDF)", amount: 453, icon: "🏠" },
-        { category: "Revolut/Youtube Premium", amount: 20, icon: "📱" },
-        { category: "Canal +", amount: 10, icon: "📺" },
-        { category: "Spotify", amount: 19, icon: "🎵" },
-        { category: "HP Instant Ink", amount: 5, icon: "🖨️" },
-        { category: "Coiffeur", amount: 20, icon: "✂️" },
-        { category: "Tabac", amount: 30, icon: "🚬" },
-        { category: "Freebox", amount: 30, icon: "📶" },
-        { category: "Forfait 0685073807", amount: 10, icon: "📞" },
-        { category: "Forfait 0667753851", amount: 10, icon: "📞" },
-        { category: "Courses", amount: 190, icon: "🛒" },
-        { category: "Découvert mois précèdent", amount: 100, icon: "💸" },
-        { category: "Anniversaire", amount: 60, icon: "🎉" },
-      ],
-      epargne: [
-        { category: "Solde livret bleu", amount: 6750, icon: "💰" },
-        { category: "À épargner", amount: 600, icon: "💹" },
-      ],
-    };
-
-    // Données mensuelles pour tous les mois (initialisées avec les données de janvier)
-    let monthlyData = {
-      janvier: JSON.parse(JSON.stringify(defaultData)), // Copie profonde de defaultData
-      février: JSON.parse(JSON.stringify(defaultData)),
-      mars: JSON.parse(JSON.stringify(defaultData)),
-      avril: JSON.parse(JSON.stringify(defaultData)),
-      mai: JSON.parse(JSON.stringify(defaultData)),
-      juin: JSON.parse(JSON.stringify(defaultData)),
-      juillet: JSON.parse(JSON.stringify(defaultData)),
-      août: JSON.parse(JSON.stringify(defaultData)),
-      septembre: JSON.parse(JSON.stringify(defaultData)),
-      octobre: JSON.parse(JSON.stringify(defaultData)),
-      novembre: JSON.parse(JSON.stringify(defaultData)),
-      décembre: JSON.parse(JSON.stringify(defaultData)),
-    };
-
-    const months = Object.keys(monthlyData); // Liste des mois disponibles
-    let currentMonthIndex = 0; // Index du mois actuel
-
-    // Fonction pour formater un montant sans centimes
-    function formatAmount(amount) {
-      return `${Math.floor(amount)} €`;
+    async function loadUserData() {
+      const doc = await db.collection("users").doc(currentUser.uid).get();
+      if (doc.exists) {
+        userData = doc.data();
+      }
+      // On s'assure que l'année actuelle existe dans l'objet
+      if (!userData[currentYear]) userData[currentYear] = {};
+      
+      document.getElementById("loader").style.display = "none";
+      document.getElementById("app-content").style.display = "block";
+      render();
     }
 
-    // Fonction pour calculer les totaux
-    function calculateTotals() {
-      const currentMonthData = monthlyData[months[currentMonthIndex]];
-      const totals = {
-        revenus: currentMonthData.revenus.reduce((sum, row) => sum + row.amount, 0),
-        charges: currentMonthData.charges.reduce((sum, row) => sum + row.amount, 0),
-        epargne: currentMonthData.epargne.find((row) => row.category === "À épargner").amount,
-      };
-      totals.restant = totals.revenus - totals.charges - totals.epargne;
-      return totals;
+    function render() {
+      const monthName = months[currentMonthIndex];
+      document.getElementById("current-month-display").innerText = monthName;
+      
+      // Accès sécurisé aux données de l'année et du mois
+      if (!userData[currentYear][monthName]) {
+        userData[currentYear][monthName] = { revenus: [], charges: [] };
+      }
+      
+      const data = userData[currentYear][monthName];
+      
+      renderList("revenus", data.revenus);
+      renderList("charges", data.charges);
+      
+      const totalRev = data.revenus.reduce((s, i) => s + (Number(i.amount) || 0), 0);
+      const totalCha = data.charges.reduce((s, i) => s + (Number(i.amount) || 0), 0);
+      
+      document.getElementById("total-revenus").innerText = `${totalRev} €`;
+      document.getElementById("total-charges").innerText = `${totalCha} €`;
+      document.getElementById("restant").innerText = `${totalRev - totalCha} €`;
     }
 
-    // Fonction pour afficher les données
-    function renderData() {
-      const currentMonthData = monthlyData[months[currentMonthIndex]];
-      const totals = calculateTotals();
-
-      // Afficher les revenus
-      const revenusContainer = document.getElementById("revenus");
-      revenusContainer.innerHTML = currentMonthData.revenus
-        .map(
-          (row, index) => `
-          <div class="item" onclick="toggleDeleteButton(this)">
-            <span class="category" onclick="editCategory('revenus', ${index}, '${row.category}')">
-              <span class="icon">${row.icon}</span>${row.category}
-            </span>
-            <span class="amount" onclick="editAmount('revenus', ${index}, ${row.amount})">
-              ${formatAmount(row.amount)}
-            </span>
-            <button class="delete-button" onclick="deleteRow('revenus', ${index})">🗑️</button>
+    function renderList(type, list) {
+      const container = document.getElementById(`${type}-list`);
+      container.innerHTML = list.map((item, idx) => `
+        <div class="item">
+          <span class="category" onclick="editItem('${type}', ${idx}, 'category')">${item.category}</span>
+          <div style="display:flex; align-items:center;">
+            <span class="amount" onclick="editItem('${type}', ${idx}, 'amount')">${item.amount} €</span>
+            <span class="delete-action" onclick="deleteRow('${type}', ${idx})">×</span>
           </div>
-        `
-        )
-        .join("");
-
-      // Afficher le total des revenus
-      document.getElementById("total-revenus").textContent = `Total des revenus : ${formatAmount(
-        totals.revenus
-      )}`;
-
-      // Afficher les charges
-      const chargesContainer = document.getElementById("charges");
-      chargesContainer.innerHTML = currentMonthData.charges
-        .map(
-          (row, index) => `
-          <div class="item" onclick="toggleDeleteButton(this)">
-            <span class="category" onclick="editCategory('charges', ${index}, '${row.category}')">
-              <span class="icon">${row.icon}</span>${row.category}
-            </span>
-            <span class="amount" onclick="editAmount('charges', ${index}, ${row.amount})">
-              ${formatAmount(row.amount)}
-            </span>
-            <button class="delete-button" onclick="deleteRow('charges', ${index})">🗑️</button>
-          </div>
-        `
-        )
-        .join("");
-
-      // Afficher le total des charges
-      document.getElementById("total-charges").textContent = `Total des charges : ${formatAmount(
-        totals.charges
-      )}`;
-
-      // Afficher l'épargne
-      const epargneContainer = document.getElementById("epargne");
-      epargneContainer.innerHTML = currentMonthData.epargne
-        .map(
-          (row, index) => `
-          <div class="item" onclick="toggleDeleteButton(this)">
-            <span class="category" onclick="editCategory('epargne', ${index}, '${row.category}')">
-              <span class="icon">${row.icon}</span>${row.category}
-            </span>
-            <span class="amount" onclick="editAmount('epargne', ${index}, ${row.amount})">
-              ${formatAmount(row.amount)}
-            </span>
-            <button class="delete-button" onclick="deleteRow('epargne', ${index})">🗑️</button>
-          </div>
-        `
-        )
-        .join("");
-
-      // Afficher le restant
-      document.getElementById("restant").textContent = formatAmount(totals.restant);
-
-      // Mettre à jour le mois affiché
-      document.getElementById("current-month").textContent =
-        months[currentMonthIndex].charAt(0).toUpperCase() + months[currentMonthIndex].slice(1);
-
-      // Activer/désactiver les boutons de navigation
-      document.getElementById("prev-month").disabled = currentMonthIndex === 0;
-      document.getElementById("next-month").disabled =
-        currentMonthIndex === months.length - 1;
-    }
-
-    // Fonction pour basculer le bouton de suppression
-    function toggleDeleteButton(item) {
-      item.classList.toggle("active");
+        </div>
+      `).join('');
     }
 
     function addRow(type) {
-  const defaultIcon = type === "revenus" ? "💼" : "🏠"; // Logo par défaut
-  monthlyData[months[currentMonthIndex]][type].push({ category: "Nouvelle catégorie", amount: 0, icon: defaultIcon });
-  renderData();
-  saveUserData(auth.currentUser.uid); // Sauvegarder les données après modification
-}
-
-function deleteRow(type, index) {
-  monthlyData[months[currentMonthIndex]][type].splice(index, 1);
-  renderData();
-  saveUserData(auth.currentUser.uid); // Sauvegarder les données après modification
-}
-
-function editAmount(type, index, currentAmount) {
-  const input = document.createElement("input");
-  input.type = "number";
-  input.value = currentAmount;
-  input.onblur = () => {
-    const newAmount = parseFloat(input.value);
-    if (!isNaN(newAmount)) {
-      monthlyData[months[currentMonthIndex]][type][index].amount = newAmount;
-      renderData(); // Recalculer les totaux
-      saveUserData(auth.currentUser.uid); // Sauvegarder les données après modification
+      const monthName = months[currentMonthIndex];
+      userData[currentYear][monthName][type].push({ category: "Nouveau", amount: 0 });
+      saveAndRender();
     }
-  };
-  const amountElement = document.querySelectorAll(`#${type} .item .amount`)[index];
-  amountElement.replaceWith(input);
-  input.focus();
-}
 
-function editCategory(type, index, currentCategory) {
-  const input = document.createElement("input");
-  input.type = "text";
-  input.value = currentCategory;
-  input.onblur = () => {
-    const newCategory = input.value.trim();
-    if (newCategory) {
-      monthlyData[months[currentMonthIndex]][type][index].category = newCategory;
-      renderData(); // Recalculer les totaux
-      saveUserData(auth.currentUser.uid); // Sauvegarder les données après modification
+    function deleteRow(type, idx) {
+      if(confirm("Supprimer cette ligne ?")) {
+        const monthName = months[currentMonthIndex];
+        userData[currentYear][monthName][type].splice(idx, 1);
+        saveAndRender();
+      }
     }
-  };
-  const categoryElement = document.querySelectorAll(`#${type} .item .category`)[index];
-  categoryElement.replaceWith(input);
-  input.focus();
-}
 
-// Redirection vers la page de connexion si l'utilisateur n'est pas connecté
-auth.onAuthStateChanged((user) => {
-  if (!user) {
-    window.location.href = "login.html";
-  }
-});
-    // Gestion des clics sur les boutons de navigation
-    document.getElementById("prev-month").addEventListener("click", () => {
+    function editItem(type, idx, field) {
+      const monthName = months[currentMonthIndex];
+      const currentVal = userData[currentYear][monthName][type][idx][field];
+      const newVal = prompt(`Modifier :`, currentVal);
+      
+      if (newVal !== null && newVal !== "") {
+        userData[currentYear][monthName][type][idx][field] = (field === 'amount') ? parseFloat(newVal.replace(',', '.')) || 0 : newVal;
+        saveAndRender();
+      }
+    }
+
+    async function saveAndRender() {
+      render();
+      await db.collection("users").doc(currentUser.uid).set(userData);
+    }
+
+    document.getElementById("prev-month").onclick = () => {
       if (currentMonthIndex > 0) {
         currentMonthIndex--;
-        renderData();
+      } else {
+        currentMonthIndex = 11;
+        currentYear--;
+        document.getElementById('year-label').innerText = currentYear;
+        if (!userData[currentYear]) userData[currentYear] = {};
       }
-    });
+      render();
+    };
 
-    document.getElementById("next-month").addEventListener("click", () => {
-      if (currentMonthIndex < months.length - 1) {
+    document.getElementById("next-month").onclick = () => {
+      if (currentMonthIndex < 11) {
         currentMonthIndex++;
-        renderData();
+      } else {
+        currentMonthIndex = 0;
+        currentYear++;
+        document.getElementById('year-label').innerText = currentYear;
+        if (!userData[currentYear]) userData[currentYear] = {};
       }
-    });
-
-    // Afficher les données au chargement de la page
-    document.addEventListener("DOMContentLoaded", renderData);
+      render();
+    };
   </script>
 </body>
 </html>

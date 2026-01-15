@@ -112,7 +112,6 @@
         const db = firebase.firestore();
         const months = ["Janvier", "Février", "Mars", "Avril", "Mai", "Juin", "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"];
         
-        // MODIF : On détecte la date réelle à l'ouverture
         const now = new Date();
         let currentYear = now.getFullYear();
         let currentMonthIdx = now.getMonth();
@@ -146,7 +145,7 @@
                 const newData = { 
                     revenus: [], 
                     charges: [], 
-                    depenses: [], // MODIF : Ajout tableau dépenses
+                    depenses: [], 
                     epargne: [
                         { category: "À épargner", amount: 0, recurring: false },
                         { category: "Retiré", amount: 0, recurring: false }
@@ -204,9 +203,11 @@
                                 `<button class="btn-action ${item.recurring ? 'active' : ''}" onclick="toggleRecurring('${type}', ${idx})">↻</button>` 
                                 : '<div style="width:25px"></div>'}
                             <input class="editable" value="${item.category}" 
+                                onfocus="this.select()"
                                 ${type === 'epargne' ? 'readonly' : `onblur="updateItem('${type}', ${idx}, 'category', this.value)"`}>
                         </div>
                         <input class="editable amount-input" type="number" value="${item.amount}" 
+                            onfocus="this.select()"
                             style="color: ${(type === 'epargne' && idx === 1) || type === 'depenses' ? 'var(--red)' : 'var(--blue)'}"
                             onblur="updateItem('${type}', ${idx}, 'amount', this.value)">
                         ${type !== 'epargne' ? 
@@ -216,14 +217,12 @@
                 `).join('');
             });
 
-            // MODIF : Le reste à vivre déduit aussi les dépenses quotidiennes
             const netRestant = totals.revenus - totals.charges - totals.epargne - totals.depenses;
             document.getElementById('restant').innerText = `${netRestant} €`;
             document.getElementById('total-savings-box').innerText = `${calculateSavingsUntilNow()} €`;
             document.getElementById('total-depenses-mini').innerText = `${totals.depenses} €`;
         }
 
-        // --- Fonctions Modal ---
         function openSpendingModal() { document.getElementById('spendingModal').style.display = 'block'; }
         function closeSpendingModal() { document.getElementById('spendingModal').style.display = 'none'; }
         window.onclick = (e) => { if(e.target == document.getElementById('spendingModal')) closeSpendingModal(); }

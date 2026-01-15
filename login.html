@@ -3,13 +3,10 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Connexion - Gestion Financière</title>
-
-  <!-- Ajouter type="module" pour utiliser les modules ES -->
+  <title>Connexion | Budget Master</title>
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
     import { getAuth, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js";
-    import { getFirestore } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyCyt94XDHjrK87gKUwaST01c7CBu_lgCB4",
@@ -17,160 +14,52 @@
       projectId: "budget-mensuel-52aa9",
       storageBucket: "budget-mensuel-52aa9.appspot.com",
       messagingSenderId: "675021368593",
-      appId: "1:675021368593:web:e64239a03c6cff30afb0b0",
-      measurementId: "G-RQB4R0744Y"
+      appId: "1:675021368593:web:e64239a03c6cff30afb0b0"
     };
 
-    // Initialiser Firebase
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
-    const db = getFirestore(app);
 
-    // Fonction de connexion
-    function login(event) {
+    window.login = async (event) => {
       event.preventDefault();
-
+      const btn = document.getElementById("login-button");
       const email = document.getElementById("email").value;
       const password = document.getElementById("password").value;
+      const errorEl = document.getElementById("error-msg");
 
-      signInWithEmailAndPassword(auth, email, password)
-        .then((userCredential) => {
-          const user = userCredential.user;
-          console.log("Connexion réussie pour", user.email);
-          window.location.href = "index.html"; // Redirection après la connexion
-        })
-        .catch((error) => {
-          console.error("Erreur de connexion:", error.message);
-        });
-    }
-
-    // Assigner l'événement de connexion
-    document.getElementById("login-button").addEventListener("click", login);
+      btn.innerText = "Connexion...";
+      try {
+        await signInWithEmailAndPassword(auth, email, password);
+        window.location.href = "index.html";
+      } catch (error) {
+        btn.innerText = "Se connecter";
+        errorEl.innerText = "Identifiants incorrects.";
+      }
+    };
   </script>
-
   <style>
-    /* Reset de base */
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
-
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-      background-color: #f5f5f7;
-      color: #1d1d1f;
-      line-height: 1.6;
-      padding: 20px;
-    }
-
-    header {
-      background-color: #ffffff;
-      color: #1d1d1f;
-      padding: 20px;
-      text-align: center;
-      margin-bottom: 20px;
-      border-radius: 12px;
-      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-    }
-
-    header h1 {
-      font-size: 1.8rem;
-      font-weight: 600;
-    }
-
-    main {
-      max-width: 400px;
-      margin: 0 auto;
-    }
-
-    form {
-      background-color: white;
-      padding: 20px;
-      border-radius: 12px;
-      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-    }
-
-    label {
-      display: block;
-      font-size: 1rem;
-      font-weight: 600;
-      margin-bottom: 8px;
-      color: #1d1d1f;
-    }
-
-    input[type="email"],
-    input[type="password"] {
-      width: 100%;
-      padding: 10px;
-      margin-bottom: 16px;
-      border: 1px solid #e0e0e0;
-      border-radius: 8px;
-      font-size: 1rem;
-    }
-
-    input[type="email"]:focus,
-    input[type="password"]:focus {
-      border-color: #007aff;
-      outline: none;
-    }
-
-    button[type="button"] {
-      width: 100%;
-      background-color: #007aff;
-      color: white;
-      border: none;
-      padding: 12px;
-      border-radius: 8px;
-      cursor: pointer;
-      font-size: 1rem;
-      font-weight: 600;
-      transition: background-color 0.3s ease;
-    }
-
-    button[type="button"]:hover {
-      background-color: #005bb5;
-    }
-
-    @media (max-width: 768px) {
-      body {
-        padding: 10px;
-      }
-
-      header h1 {
-        font-size: 1.5rem;
-      }
-
-      form {
-        padding: 16px;
-      }
-
-      input[type="email"],
-      input[type="password"] {
-        font-size: 0.9rem;
-      }
-
-      button[type="button"] {
-        font-size: 0.9rem;
-      }
-    }
+    :root { --apple-blue: #007AFF; }
+    body { font-family: -apple-system, sans-serif; background: #f2f2f7; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; }
+    .login-card { background: white; padding: 40px; border-radius: 22px; box-shadow: 0 10px 40px rgba(0,0,0,0.08); width: 90%; max-width: 360px; text-align: center; }
+    h1 { font-weight: 700; font-size: 26px; margin-bottom: 8px; }
+    p { color: #8e8e93; margin-bottom: 30px; font-size: 14px; }
+    input { width: 100%; padding: 14px; margin-bottom: 15px; border: 1px solid #d1d1d6; border-radius: 12px; font-size: 16px; outline: none; background: #f9f9fb; }
+    input:focus { border-color: var(--apple-blue); background: #fff; }
+    button { width: 100%; padding: 14px; background: var(--apple-blue); color: white; border: none; border-radius: 12px; font-size: 16px; font-weight: 600; cursor: pointer; transition: 0.2s; }
+    button:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,122,255,0.3); }
+    #error-msg { color: #ff3b30; font-size: 13px; margin-top: 15px; min-height: 18px; }
   </style>
 </head>
 <body>
-  <header>
-    <h1>Connexion - Budget Mensuel 2025</h1>
-  </header>
-
-  <main>
-    <form id="login-form">
-      <label for="email">Email :</label>
-      <input type="email" id="email" placeholder="Entrez votre email" required />
-      
-      <label for="password">Mot de passe :</label>
-      <input type="password" id="password" placeholder="Entrez votre mot de passe" required />
-
-      <button type="button" id="login-button">Se connecter</button>
+  <div class="login-card">
+    <h1>Budget</h1>
+    <p>Connectez-vous pour gérer 2026</p>
+    <form onsubmit="login(event)">
+      <input type="email" id="email" placeholder="Email" required>
+      <input type="password" id="password" placeholder="Mot de passe" required>
+      <button id="login-button" type="submit">Se connecter</button>
     </form>
-  </main>
+    <div id="error-msg"></div>
+  </div>
 </body>
 </html>

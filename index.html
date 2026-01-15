@@ -14,7 +14,6 @@
         header { background: white; padding: 15px 25px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 1px 0 rgba(0,0,0,0.05); }
         .avatar { width: 35px; height: 35px; border-radius: 50%; background: var(--blue); color: white; display: flex; align-items: center; justify-content: center; font-weight: bold; }
         
-        /* MODIF : Élargissement pour PC */
         main { max-width: 1400px; margin: 20px auto; padding: 0 20px; }
         
         .dashboard-grid { display: grid; grid-template-columns: 1fr; gap: 20px; }
@@ -25,7 +24,7 @@
         }
 
         .card { background: white; padding: 25px; border-radius: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.03); height: 100%; }
-        .summary-card { color: white; text-align: center; cursor: pointer; transition: transform 0.2s; padding: 30px; }
+        .summary-card { color: white; text-align: center; cursor: pointer; transition: transform 0.2s; padding: 30px; border-radius: 24px; }
         .summary-card:active { transform: scale(0.98); }
         .summary-card.blue { background: var(--blue); }
         .summary-card.orange { background: var(--orange); }
@@ -46,7 +45,6 @@
         .btn-action { cursor: pointer; opacity: 0.2; transition: 0.2s; font-size: 18px; border: none; background: none; padding: 5px; }
         .btn-action.active { opacity: 1; color: var(--blue); font-weight: bold; }
         .add-btn { width: 100%; padding: 14px; margin-top: 15px; border-radius: 12px; border: 1px dashed #d1d1d6; background: transparent; color: var(--blue); font-weight: 600; cursor: pointer; transition: 0.2s; }
-        .add-btn:hover { background: #f2f2f7; border-color: var(--blue); }
 
         .modal { display: none; position: fixed; z-index: 100; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.4); backdrop-filter: blur(8px); }
         .modal-content { background: white; margin: 5% auto; padding: 30px; width: 90%; max-width: 550px; border-radius: 28px; position: relative; box-shadow: 0 20px 40px rgba(0,0,0,0.1); }
@@ -59,7 +57,7 @@
             <div id="user-avatar" class="avatar">?</div>
             <span id="user-email" style="font-size: 15px; font-weight: 600;">...</span>
         </div>
-        <button onclick="firebase.auth().signOut()" style="border:none; background:none; color:var(--red); font-weight:600; cursor:pointer; font-size: 15px;">Déconnexion</button>
+        <button onclick="firebase.auth().signOut()" style="border:none; background:none; color:var(--red); font-weight:600; cursor:pointer;">Déconnexion</button>
     </header>
 
     <main>
@@ -72,60 +70,28 @@
         <div class="dashboard-grid">
             <div class="top-cards">
                 <div class="card summary-card blue" onclick="openModal('spendingModal')">
-                    <div style="font-size: 15px; opacity: 0.9; font-weight: 500;">Reste à vivre (disponible)</div>
+                    <div style="font-size: 15px; opacity: 0.9;">Reste à vivre (disponible)</div>
                     <div id="restant" style="font-size: 42px; font-weight: 900; margin-top: 8px;">0 €</div>
                 </div>
                 <div class="card summary-card orange" onclick="openModal('coursesModal')">
-                    <div style="font-size: 15px; opacity: 0.9; font-weight: 500;">Budget Courses Restant</div>
+                    <div style="font-size: 15px; opacity: 0.9;">Budget Courses Restant</div>
                     <div id="courses-restant" style="font-size: 42px; font-weight: 900; margin-top: 8px;">0 €</div>
                 </div>
                 <div class="card summary-card green">
-                    <div style="font-size: 15px; opacity: 0.9; font-weight: 500;">Épargne cumulée à ce jour</div>
+                    <div style="font-size: 15px; opacity: 0.9;">Épargne cumulée à ce jour</div>
                     <div id="total-savings-box" style="font-size: 42px; font-weight: 900; margin-top: 8px;">0 €</div>
                 </div>
             </div>
 
-            <div class="card">
-                <div class="section-title">Revenus 💼 <span id="sub-revenus" class="total-mini">0€</span></div>
-                <div id="list-revenus"></div>
-                <button class="add-btn" onclick="addItem('revenus')">+ Ajouter</button>
-            </div>
-
-            <div class="card">
-                <div class="section-title">Charges 🏠 <span id="sub-charges" class="total-mini">0€</span></div>
-                <div id="list-charges"></div>
-                <button class="add-btn" onclick="addItem('charges')">+ Ajouter</button>
-            </div>
-
-            <div class="card">
-                <div class="section-title">Budget Courses 🛒 <span id="sub-budget_courses" class="total-mini">0€</span></div>
-                <div id="list-budget_courses"></div>
-            </div>
-
-            <div class="card">
-                <div class="section-title">Épargne du mois 💰 <span id="sub-epargne" class="total-mini">0€</span></div>
-                <div id="list-epargne"></div>
-            </div>
+            <div class="card"><div class="section-title">Revenus 💼 <span id="sub-revenus" class="total-mini">0€</span></div><div id="list-revenus"></div><button class="add-btn" onclick="addItem('revenus')">+ Ajouter</button></div>
+            <div class="card"><div class="section-title">Charges 🏠 <span id="sub-charges" class="total-mini">0€</span></div><div id="list-charges"></div><button class="add-btn" onclick="addItem('charges')">+ Ajouter</button></div>
+            <div class="card"><div class="section-title">Budget Courses 🛒 <span id="sub-budget_courses" class="total-mini">0€</span></div><div id="list-budget_courses"></div></div>
+            <div class="card"><div class="section-title">Épargne du mois 💰 <span id="sub-epargne" class="total-mini">0€</span></div><div id="list-epargne"></div></div>
         </div>
     </main>
 
-    <div id="spendingModal" class="modal">
-        <div class="modal-content">
-            <span class="close-modal" onclick="closeModal('spendingModal')">✕</span>
-            <h3 style="margin-bottom: 25px; font-size: 22px;">Dépenses quotidiennes</h3>
-            <div id="list-depenses"></div>
-            <button class="add-btn" onclick="addItem('depenses')">+ Noter un achat</button>
-        </div>
-    </div>
-
-    <div id="coursesModal" class="modal">
-        <div class="modal-content">
-            <span class="close-modal" onclick="closeModal('coursesModal')">✕</span>
-            <h3 style="margin-bottom: 25px; font-size: 22px;">Détails des tickets courses</h3>
-            <div id="list-tickets_courses"></div>
-            <button class="add-btn" onclick="addItem('tickets_courses')">+ Ajouter un ticket</button>
-        </div>
-    </div>
+    <div id="spendingModal" class="modal"><div class="modal-content"><span class="close-modal" onclick="closeModal('spendingModal')">✕</span><h3 style="margin-bottom: 25px;">Dépenses quotidiennes</h3><div id="list-depenses"></div><button class="add-btn" onclick="addItem('depenses')">+ Noter un achat</button></div></div>
+    <div id="coursesModal" class="modal"><div class="modal-content"><span class="close-modal" onclick="closeModal('coursesModal')">✕</span><h3 style="margin-bottom: 25px;">Détails des courses</h3><div id="list-tickets_courses"></div><button class="add-btn" onclick="addItem('tickets_courses')">+ Ajouter un ticket</button></div></div>
 
     <script>
         const firebaseConfig = {
@@ -181,23 +147,8 @@
                 }
                 userData[key] = newData;
             }
-            // MODIF : Nom de la ligne
             if (!userData[key].budget_courses) userData[key].budget_courses = [{ category: "Budget", amount: 0, recurring: false }];
             userData[key].budget_courses[0].category = "Budget";
-        }
-
-        function calculateSavingsUntilNow() {
-            let total = 0;
-            for (let y = 2025; y <= currentYear; y++) {
-                for (let m = 0; m < 12; m++) {
-                    if (y === currentYear && m > currentMonthIdx) break;
-                    const key = `${y}_${months[m]}`;
-                    if (userData[key]?.epargne) {
-                        total += ((parseFloat(userData[key].epargne[0].amount) || 0) - (parseFloat(userData[key].epargne[1].amount) || 0));
-                    }
-                }
-            }
-            return total;
         }
 
         function render() {
@@ -212,43 +163,40 @@
                 } else {
                     totals[type] = list.reduce((s, i) => s + (parseFloat(i.amount) || 0), 0);
                 }
-                
-                if (document.getElementById(`sub-${type}`)) {
-                    document.getElementById(`sub-${type}`).innerText = `${totals[type]} €`;
-                }
+                if (document.getElementById(`sub-${type}`)) document.getElementById(`sub-${type}`).innerText = `${totals[type]} €`;
 
-                let targetId = `list-${type}`;
-                if (type === 'depenses') targetId = 'list-depenses';
-                if (type === 'tickets_courses') targetId = 'list-tickets_courses';
-
+                let targetId = type === 'depenses' ? 'list-depenses' : type === 'tickets_courses' ? 'list-tickets_courses' : `list-${type}`;
                 const element = document.getElementById(targetId);
                 if (element) {
                     element.innerHTML = list.map((item, idx) => `
                         <div class="item-row">
                             <div style="display:flex; align-items:center; gap:8px; flex:1;">
                                 ${(type !== 'epargne' && type !== 'depenses' && type !== 'tickets_courses') ? 
-                                    `<button class="btn-action ${item.recurring ? 'active' : ''}" onclick="toggleRecurring('${type}', ${idx})">↻</button>` 
-                                    : '<div style="width:25px"></div>'}
+                                    `<button class="btn-action ${item.recurring ? 'active' : ''}" onclick="toggleRecurring('${type}', ${idx})">↻</button>` : '<div style="width:25px"></div>'}
                                 <input class="editable" value="${item.category}" onfocus="this.select()"
                                     ${(type === 'epargne' || (type === 'budget_courses' && idx === 0)) ? 'readonly' : `onblur="updateItem('${type}', ${idx}, 'category', this.value)"`}>
                             </div>
                             <input class="editable amount-input" type="number" value="${item.amount}" onfocus="this.select()"
                                 style="color: ${(type === 'epargne' && idx === 1) || type === 'depenses' || type === 'tickets_courses' ? 'var(--red)' : 'var(--blue)'}"
                                 onblur="updateItem('${type}', ${idx}, 'amount', this.value)">
-                            ${type !== 'epargne' && (type !== 'budget_courses' || idx !== 0) ? 
-                                `<button class="btn-action" style="color:var(--red);opacity:0.2;" onclick="deleteItem('${type}', ${idx})">✕</button>` 
-                                : '<div style="width:25px"></div>'}
-                        </div>
-                    `).join('');
+                            ${type !== 'epargne' && (type !== 'budget_courses' || idx !== 0) ? `<button class="btn-action" style="color:var(--red);opacity:0.2;" onclick="deleteItem('${type}', ${idx})">✕</button>` : '<div style="width:25px"></div>'}
+                        </div>`).join('');
                 }
             });
 
             const netRestant = totals.revenus - totals.charges - totals.epargne - totals.depenses - totals.budget_courses;
-            const coursesRestant = totals.budget_courses - totals.tickets_courses;
-
             document.getElementById('restant').innerText = `${netRestant} €`;
-            document.getElementById('courses-restant').innerText = `${coursesRestant} €`;
-            document.getElementById('total-savings-box').innerText = `${calculateSavingsUntilNow()} €`;
+            document.getElementById('courses-restant').innerText = `${totals.budget_courses - totals.tickets_courses} €`;
+            
+            let cumule = 0;
+            for (let y = 2025; y <= currentYear; y++) {
+                for (let m = 0; m < 12; m++) {
+                    if (y === currentYear && m > currentMonthIdx) break;
+                    const k = `${y}_${months[m]}`;
+                    if (userData[k]?.epargne) cumule += ((parseFloat(userData[k].epargne[0].amount) || 0) - (parseFloat(userData[k].epargne[1].amount) || 0));
+                }
+            }
+            document.getElementById('total-savings-box').innerText = `${cumule} €`;
         }
 
         function openModal(id) { document.getElementById(id).style.display = 'block'; }
@@ -257,13 +205,8 @@
 
         function updateItem(type, idx, field, val) {
             const key = `${currentYear}_${months[currentMonthIdx]}`;
-            const numVal = field === 'amount' ? parseFloat(val) || 0 : val;
-            userData[key][type][idx][field] = numVal;
-            
-            // MODIF : La récurrence prend en compte le nouveau nom "Budget"
-            if (userData[key][type][idx].recurring) {
-                propagateChange(type, userData[key][type][idx]);
-            }
+            userData[key][type][idx][field] = field === 'amount' ? parseFloat(val) || 0 : val;
+            if (userData[key][type][idx].recurring) propagateChange(type, userData[key][type][idx]);
             save();
         }
 
@@ -282,12 +225,14 @@
                 const k = `${y}_${months[m]}`;
                 if (!userData[k]) initMonthData(y, m);
                 
-                const ex = userData[k][type].findIndex(it => it.category === item.category);
-                if (ex > -1) {
-                    userData[k][type][ex].amount = item.amount;
-                    userData[k][type][ex].recurring = true;
+                if (type === 'budget_courses') {
+                    // MODIF : On met à jour uniquement le montant de la ligne Budget existante
+                    userData[k][type][0].amount = item.amount;
+                    userData[k][type][0].recurring = true;
                 } else {
-                    userData[k][type].push({ ...item });
+                    const ex = userData[k][type].findIndex(it => it.category === item.category);
+                    if (ex > -1) userData[k][type][ex] = { ...item };
+                    else userData[k][type].push({ ...item });
                 }
             }
         }
@@ -298,20 +243,15 @@
                 m++; if (m > 11) { m = 0; y++; }
                 const k = `${y}_${months[m]}`;
                 if (userData[k]) {
-                    // On ne supprime pas la ligne "Budget" car elle est fixe, on désactive juste sa récurrence
-                    if (category === "Budget") {
-                        userData[k][type][0].recurring = false;
-                    } else {
-                        userData[k][type] = userData[k][type].filter(it => it.category !== category);
-                    }
+                    if (category === "Budget") userData[k][type][0].recurring = false;
+                    else userData[k][type] = userData[k][type].filter(it => it.category !== category);
                 }
             }
         }
 
         function addItem(type) {
             const key = `${currentYear}_${months[currentMonthIdx]}`;
-            const newItem = { category: (type === 'tickets_courses' ? "Courses" : "Nouveau"), amount: 0, recurring: false };
-            userData[key][type].push(newItem);
+            userData[key][type].push({ category: (type === 'tickets_courses' ? "Courses" : "Nouveau"), amount: 0, recurring: false });
             save();
         }
 

@@ -1,24 +1,64 @@
-<style>
-        /* ... (Styles précédents) ... */
-        @media (min-width: 768px) { 
-            .dashboard-grid { grid-template-columns: 1fr 1fr 1fr; } /* 3 colonnes sur PC */
-            .full-width { grid-column: span 3; } 
-        }
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mon Budget | 2026</title>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
+    <style>
+        :root { --blue: #007aff; --bg: #f5f5f7; --red: #ff3b30; --green: #34c759; }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: -apple-system, sans-serif; }
+        body { background: var(--bg); color: #1d1d1f; padding-bottom: 40px; }
+
+        header { background: white; padding: 15px 25px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 1px 0 rgba(0,0,0,0.05); }
+        .avatar { width: 35px; height: 35px; border-radius: 50%; background: var(--blue); color: white; display: flex; align-items: center; justify-content: center; font-weight: bold; }
+        
+        main { max-width: 1100px; margin: 20px auto; padding: 0 20px; }
+        .dashboard-grid { display: grid; grid-template-columns: 1fr; gap: 20px; }
+        @media (min-width: 900px) { .dashboard-grid { grid-template-columns: 1fr 1fr 1fr; } .full-width { grid-column: span 3; } }
+
+        .card { background: white; padding: 25px; border-radius: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.03); }
+        .summary-card { background: var(--blue); color: white; text-align: center; }
+        
+        .nav-bar { display: flex; justify-content: space-between; align-items: center; margin: 20px 0; }
+        .nav-bar button { border: none; background: white; width: 40px; height: 40px; border-radius: 12px; cursor: pointer; font-size: 18px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+
         .section-title { margin-bottom: 15px; color: #8e8e93; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; display: flex; justify-content: space-between; }
         .total-mini { font-weight: 700; color: #1d1d1f; }
-        .btn-action.active { color: var(--blue); opacity: 1; font-weight: bold; }
+
+        .item-row { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 0.5px solid #f2f2f7; gap: 10px; }
+        .editable { border: none; background: transparent; font-size: 16px; width: 100%; outline: none; padding: 4px; border-radius: 6px; transition: 0.2s; }
+        .editable:focus { background: #f2f2f7; }
+        .amount-input { font-weight: 600; text-align: right; width: 85px; color: var(--blue); }
+        
+        .btn-action { cursor: pointer; opacity: 0.2; transition: 0.2s; font-size: 18px; border: none; background: none; }
+        .btn-action.active { opacity: 1; color: var(--blue); font-weight: bold; }
+        .btn-delete { color: var(--red); opacity: 0.2; }
+        .btn-delete:hover { opacity: 1; }
+        .add-btn { width: 100%; padding: 12px; margin-top: 15px; border-radius: 12px; border: 1px dashed #d1d1d6; background: transparent; color: var(--blue); font-weight: 600; cursor: pointer; }
     </style>
+</head>
+<body>
+    <header>
+        <div style="display:flex; align-items:center; gap:10px;">
+            <div id="user-avatar" class="avatar">?</div>
+            <span id="user-email" style="font-size: 14px; font-weight: 500;">Chargement...</span>
+        </div>
+        <button onclick="firebase.auth().signOut()" style="border:none; background:none; color:var(--red); font-weight:600; cursor:pointer;">Déconnexion</button>
+    </header>
 
     <main>
         <div class="nav-bar">
             <button onclick="changeMonth(-1)">❬</button>
-            <h2 id="month-label">...</h2>
+            <h2 id="month-label" style="font-weight: 700;">Janvier 2026</h2>
             <button onclick="changeMonth(1)">❭</button>
         </div>
 
         <div class="dashboard-grid">
             <div class="card summary-card full-width">
-                <div style="opacity: 0.8; font-size: 14px;">Reste à vivre (après épargne)</div>
+                <div style="font-size: 14px; opacity: 0.8;">Reste à vivre (après épargne)</div>
                 <div id="restant" style="font-size: 38px; font-weight: 800; margin-top: 5px;">0 €</div>
             </div>
 
@@ -43,35 +83,52 @@
     </main>
 
     <script>
-        // ... Config et Init Firebase ...
+        const firebaseConfig = {
+            apiKey: "AIzaSyCyt94XDHjrK87gKUwaST01c7CBu_lgCB4",
+            authDomain: "budget-mensuel-52aa9.firebaseapp.com",
+            projectId: "budget-mensuel-52aa9",
+            storageBucket: "budget-mensuel-52aa9.appspot.com",
+            messagingSenderId: "675021368593",
+            appId: "1:675021368593:web:e64239a03c6cff30afb0b0"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+        const months = ["Janvier", "Février", "Mars", "Avril", "Mai", "Juin", "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"];
+        
+        let currentYear = 2026;
+        let currentMonthIdx = new Date().getMonth();
+        let currentUser = null;
+        let userData = {};
+
+        firebase.auth().onAuthStateChanged(user => {
+            if (user) {
+                currentUser = user;
+                document.getElementById('user-email').innerText = user.email;
+                document.getElementById('user-avatar').innerText = user.email[0].toUpperCase();
+                loadData();
+            } else { window.location.href = "login.html"; }
+        });
 
         async function loadData() {
             const doc = await db.collection("users").doc(currentUser.uid).get();
             if (doc.exists) userData = doc.data();
-            initMonthData(currentYear, currentMonthIdx); // Initialise le mois actuel
+            initMonthData(currentYear, currentMonthIdx);
             render();
         }
 
-        // LOGIQUE DE RÉCURRENCE AMÉLIORÉE
         function initMonthData(year, monthIdx) {
             const key = `${year}_${months[monthIdx]}`;
             if (!userData[key]) {
-                // On cherche le mois précédent chronologiquement
-                let prevIdx = monthIdx - 1;
-                let prevYear = year;
+                let prevIdx = monthIdx - 1; let prevYear = year;
                 if (prevIdx < 0) { prevIdx = 11; prevYear--; }
-                
                 const prevKey = `${prevYear}_${months[prevIdx]}`;
+                
                 const newData = { revenus: [], charges: [], epargne: [] };
-
                 if (userData[prevKey]) {
-                    // Importation automatique des éléments marqués récurrents
                     ['revenus', 'charges', 'epargne'].forEach(type => {
-                        if (userData[prevKey][type]) {
-                            newData[type] = userData[prevKey][type]
-                                .filter(item => item.recurring === true)
-                                .map(item => ({ ...item })); // Copie propre
-                        }
+                        newData[type] = (userData[prevKey][type] || [])
+                            .filter(i => i.recurring)
+                            .map(i => ({ ...i }));
                     });
                 }
                 userData[key] = newData;
@@ -81,40 +138,50 @@
         function render() {
             const key = `${currentYear}_${months[currentMonthIdx]}`;
             document.getElementById('month-label').innerText = `${months[currentMonthIdx]} ${currentYear}`;
-            
-            const types = ['revenus', 'charges', 'epargne'];
             let totals = { revenus: 0, charges: 0, epargne: 0 };
 
-            types.forEach(type => {
+            ['revenus', 'charges', 'epargne'].forEach(type => {
                 const list = userData[key][type] || [];
                 totals[type] = list.reduce((s, i) => s + (Number(i.amount) || 0), 0);
-                document.getElementById(`sub-${type}`).innerText = `${totals[type]}€`;
+                document.getElementById(`sub-${type}`).innerText = `${totals[type]} €`;
                 
-                const container = document.getElementById(`list-${type}`);
-                container.innerHTML = list.map((item, idx) => `
+                document.getElementById(`list-${type}`).innerHTML = list.map((item, idx) => `
                     <div class="item-row">
-                        <div class="item-info">
-                            <button class="btn-action ${item.recurring ? 'active' : ''}" 
-                                    onclick="toggleRecurring('${type}', ${idx})">↻</button>
-                            <input class="editable" value="${item.category}" 
-                                   onblur="updateItem('${type}', ${idx}, 'category', this.value)">
+                        <div style="display:flex; align-items:center; gap:8px; flex:1;">
+                            <button class="btn-action ${item.recurring ? 'active' : ''}" onclick="toggleRecurring('${type}', ${idx})">↻</button>
+                            <input class="editable" value="${item.category}" onblur="updateItem('${type}', ${idx}, 'category', this.value)">
                         </div>
-                        <input class="editable amount-input" type="number" value="${item.amount}" 
-                               onblur="updateItem('${type}', ${idx}, 'amount', this.value)">
+                        <input class="editable amount-input" type="number" value="${item.amount}" onblur="updateItem('${type}', ${idx}, 'amount', this.value)">
                         <button class="btn-action btn-delete" onclick="deleteItem('${type}', ${idx})">✕</button>
                     </div>
                 `).join('');
             });
-
             document.getElementById('restant').innerText = `${totals.revenus - totals.charges - totals.epargne} €`;
         }
 
-        // ... (addItem, deleteItem, updateItem restent identiques, juste ajouter 'epargne' dans la logique) ...
-        
-        async function toggleRecurring(type, idx) {
+        function updateItem(type, idx, field, val) {
+            const key = `${currentYear}_${months[currentMonthIdx]}`;
+            userData[key][type][idx][field] = field === 'amount' ? parseFloat(val) || 0 : val;
+            save();
+        }
+
+        function toggleRecurring(type, idx) {
             const key = `${currentYear}_${months[currentMonthIdx]}`;
             userData[key][type][idx].recurring = !userData[key][type][idx].recurring;
-            await save();
+            save();
+        }
+
+        function addItem(type) {
+            const key = `${currentYear}_${months[currentMonthIdx]}`;
+            if(!userData[key][type]) userData[key][type] = [];
+            userData[key][type].push({ category: "Nouveau", amount: 0, recurring: false });
+            save();
+        }
+
+        function deleteItem(type, idx) {
+            const key = `${currentYear}_${months[currentMonthIdx]}`;
+            userData[key][type].splice(idx, 1);
+            save();
         }
 
         function changeMonth(dir) {
@@ -130,3 +197,5 @@
             await db.collection("users").doc(currentUser.uid).set(userData);
         }
     </script>
+</body>
+</html>

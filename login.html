@@ -1,51 +1,21 @@
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Connexion | Budget 2026</title>
-    <script type="module">
+<script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
-        import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, updateProfile } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js";
+        import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, setPersistence, browserLocalPersistence, browserSessionPersistence } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js";
 
-        const firebaseConfig = {
-            apiKey: "AIzaSyCyt94XDHjrK87gKUwaST01c7CBu_lgCB4",
-            authDomain: "budget-mensuel-52aa9.firebaseapp.com",
-            projectId: "budget-mensuel-52aa9",
-            storageBucket: "budget-mensuel-52aa9.appspot.com",
-            messagingSenderId: "675021368593",
-            appId: "1:675021368593:web:e64239a03c6cff30afb0b0"
-        };
-
-        const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
-
-        // Basculer entre connexion et inscription
-        window.toggleAuth = () => {
-            const title = document.getElementById('auth-title');
-            const btn = document.getElementById('auth-btn');
-            const link = document.getElementById('auth-link');
-            if (btn.dataset.mode === 'login') {
-                title.innerText = "Créer un compte";
-                btn.innerText = "S'inscrire";
-                btn.dataset.mode = 'signup';
-                link.innerText = "Déjà un compte ? Se connecter";
-            } else {
-                title.innerText = "Connexion";
-                btn.innerText = "Se connecter";
-                btn.dataset.mode = 'login';
-                link.innerText = "Pas de compte ? Créer une session";
-            }
-        };
+        // ... Config identique ...
 
         window.handleAuth = async (e) => {
             e.preventDefault();
             const mode = document.getElementById('auth-btn').dataset.mode;
             const email = document.getElementById('email').value;
             const password = document.getElementById('password').value;
+            const rememberMe = document.getElementById('remember').checked;
             const errorEl = document.getElementById('error-msg');
 
             try {
+                // Gestion de la persistance
+                await setPersistence(auth, rememberMe ? browserLocalPersistence : browserSessionPersistence);
+                
                 if (mode === 'login') {
                     await signInWithEmailAndPassword(auth, email, password);
                 } else {
@@ -58,15 +28,9 @@
         };
     </script>
     <style>
-        :root { --blue: #007AFF; }
-        body { font-family: -apple-system, sans-serif; background: #f2f2f7; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; }
-        .card { background: white; padding: 40px; border-radius: 24px; box-shadow: 0 20px 60px rgba(0,0,0,0.1); width: 90%; max-width: 380px; text-align: center; }
-        h1 { font-weight: 700; margin-bottom: 30px; }
-        input { width: 100%; padding: 14px; margin-bottom: 15px; border: 1px solid #d1d1d6; border-radius: 14px; font-size: 16px; outline: none; transition: 0.2s; background: #f5f5f7; }
-        input:focus { border-color: var(--blue); background: white; box-shadow: 0 0 0 4px rgba(0,122,255,0.1); }
-        button { width: 100%; padding: 14px; background: var(--blue); color: white; border: none; border-radius: 14px; font-size: 16px; font-weight: 600; cursor: pointer; margin-top: 10px; }
-        .toggle-link { margin-top: 20px; display: block; color: var(--blue); font-size: 14px; cursor: pointer; text-decoration: none; }
-        #error-msg { color: #ff3b30; font-size: 13px; margin-top: 15px; }
+        /* ... Styles précédents ... */
+        .remember-container { display: flex; align-items: center; gap: 8px; margin: 10px 0; font-size: 14px; color: #636366; justify-content: start; padding-left: 5px; }
+        input[type="checkbox"] { width: auto; margin: 0; cursor: pointer; }
     </style>
 </head>
 <body>
@@ -75,6 +39,10 @@
         <form onsubmit="handleAuth(event)">
             <input type="email" id="email" placeholder="Email" required>
             <input type="password" id="password" placeholder="Mot de passe" required>
+            <div class="remember-container">
+                <input type="checkbox" id="remember">
+                <label for="remember">Se souvenir de moi</label>
+            </div>
             <button type="submit" id="auth-btn" data-mode="login">Se connecter</button>
         </form>
         <a class="toggle-link" id="auth-link" onclick="toggleAuth()">Pas de compte ? Créer une session</a>

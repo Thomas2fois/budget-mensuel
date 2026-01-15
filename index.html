@@ -56,7 +56,7 @@
                     <div id="restant" style="font-size: 38px; font-weight: 800; margin-top: 5px;">0 €</div>
                 </div>
                 <div class="card summary-card savings">
-                    <div style="font-size: 14px; opacity: 0.8;">Total Épargne Cumulée</div>
+                    <div style="font-size: 14px; opacity: 0.8;">Épargne cumulée à ce jour</div>
                     <div id="total-savings-box" style="font-size: 38px; font-weight: 800; margin-top: 5px;">0 €</div>
                 </div>
             </div>
@@ -76,7 +76,7 @@
             <div class="card">
                 <div class="section-title">Épargne du mois 💰 <span id="sub-epargne" class="total-mini">0€</span></div>
                 <div id="list-epargne"></div>
-                </div>
+            </div>
         </div>
     </main>
 
@@ -121,7 +121,14 @@
                 if (prevIdx < 0) { prevIdx = 11; prevYear--; }
                 const prevKey = `${prevYear}_${months[prevIdx]}`;
                 
-                const newData = { revenus: [], charges: [], epargne: [{ category: "À épargner", amount: 0, recurring: false }] };
+                const newData = { 
+                    revenus: [], 
+                    charges: [], 
+                    epargne: [
+                        { category: "À épargner", amount: 0, recurring: false },
+                        { category: "Retiré", amount: 0, recurring: false }
+                    ] 
+                };
                 if (userData[prevKey]) {
                     ['revenus', 'charges'].forEach(type => {
                         newData[type] = (userData[prevKey][type] || []).filter(i => i.recurring).map(i => ({ ...i }));
@@ -129,23 +136,33 @@
                 }
                 userData[key] = newData;
             }
-            // Force le nom correct si l'ancienne donnée traîne
-            if (!userData[key].epargne || userData[key].epargne.length === 0) {
-                userData[key].epargne = [{ category: "À épargner", amount: 0, recurring: false }];
-            } else {
-                userData[key].epargne[0].category = "À épargner"; 
+            // Sécurité : forcer les deux lignes d'épargne
+            if (!userData[key].epargne || userData[key].epargne.length < 2) {
+                userData[key].epargne = [
+                    { category: "À épargner", amount: 0, recurring: false },
+                    { category: "Retiré", amount: 0, recurring: false }
+                ];
             }
+            userData[key].epargne[0].category = "À épargner";
+            userData[key].epargne[1].category = "Retiré";
         }
 
-        function calculateGlobalSavings() {
+        function calculateSavingsUntilNow() {
             let total = 0;
-            Object.values(userData).forEach(monthData => {
-                if (monthData && monthData.epargne) {
-                    monthData.epargne.forEach(item => {
-                        total += (parseFloat(item.amount) || 0);
-                    });
+            // On calcule uniquement jusqu'au mois affiché actuellement
+            for (let y = 2025; y <= currentYear; y++) {
+                for (let m = 0; m < 12; m++) {
+                    // Arrêter le calcul si on dépasse le mois/année en cours de visualisation
+                    if (y === currentYear && m > currentMonthIdx) break;
+                    
+                    const key = `${y}_${months[m]}`;
+                    if (userData[key] && userData[key].epargne) {
+                        const aEpargner = parseFloat(userData[key].epargne[0].amount) || 0;
+                        const retire = parseFloat(userData[key].epargne[1].amount) || 0;
+                        total += (aEpargner - retire);
+                    }
                 }
-            });
+            }
             return total;
         }
 
@@ -156,7 +173,17 @@
 
             ['revenus', 'charges', 'epargne'].forEach(type => {
                 const list = userData[key][type] || [];
-                totals[type] = list.reduce((s, i) => s + (parseFloat(i.amount) || 0), 0);
+                
+                // Calcul du total de la section pour l'affichage mini
+                if (type === 'epargne') {
+                    // Pour l'épargne, le total du mois c'est (Ajout - Retrait)
+                    const aEpargner = parseFloat(list[0]?.amount) || 0;
+                    const retire = parseFloat(list[1]?.amount) || 0;
+                    totals[type] = aEpargner - retire;
+                } else {
+                    totals[type] = list.reduce((s, i) => s + (parseFloat(i.amount) || 0), 0);
+                }
+                
                 document.getElementById(`sub-${type}`).innerText = `${totals[type]} €`;
                 
                 document.getElementById(`list-${type}`).innerHTML = list.map((item, idx) => `
@@ -168,7 +195,9 @@
                             <input class="editable" value="${item.category}" 
                                 ${type === 'epargne' ? 'readonly' : `onblur="updateItem('${type}', ${idx}, 'category', this.value)"`}>
                         </div>
-                        <input class="editable amount-input" type="number" value="${item.amount}" onblur="updateItem('${type}', ${idx}, 'amount', this.value)">
+                        <input class="editable amount-input" type="number" value="${item.amount}" 
+                            style="color: ${type === 'epargne' && idx === 1 ? 'var(--red)' : 'var(--blue)'}"
+                            onblur="updateItem('${type}', ${idx}, 'amount', this.value)">
                         ${type !== 'epargne' ? 
                             `<button class="btn-action" style="color:var(--red);opacity:0.2;" onclick="deleteItem('${type}', ${idx})">✕</button>` 
                             : '<div style="width:25px"></div>'}
@@ -176,8 +205,9 @@
                 `).join('');
             });
 
+            // Reste à vivre = Revenus - Charges - (Épargne nette du mois)
             document.getElementById('restant').innerText = `${totals.revenus - totals.charges - totals.epargne} €`;
-            document.getElementById('total-savings-box').innerText = `${calculateGlobalSavings()} €`;
+            document.getElementById('total-savings-box').innerText = `${calculateSavingsUntilNow()} €`;
         }
 
         function updateItem(type, idx, field, val) {

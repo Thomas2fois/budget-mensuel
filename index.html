@@ -142,10 +142,11 @@
 
         function calculateGlobalSavings() {
             let total = 0;
-            Object.keys(userData).forEach(monthKey => {
-                if (userData[monthKey].epargne) {
-                    userData[monthKey].epargne.forEach(item => {
-                        total += (Number(item.amount) || 0);
+            // Parcourt tous les mois stockés dans l'objet userData
+            Object.values(userData).forEach(monthData => {
+                if (monthData && monthData.epargne) {
+                    monthData.epargne.forEach(item => {
+                        total += (parseFloat(item.amount) || 0);
                     });
                 }
             });
@@ -159,13 +160,15 @@
 
             ['revenus', 'charges', 'epargne'].forEach(type => {
                 const list = userData[key][type] || [];
-                totals[type] = list.reduce((s, i) => s + (Number(i.amount) || 0), 0);
+                totals[type] = list.reduce((s, i) => s + (parseFloat(i.amount) || 0), 0);
                 document.getElementById(`sub-${type}`).innerText = `${totals[type]} €`;
                 
                 document.getElementById(`list-${type}`).innerHTML = list.map((item, idx) => `
                     <div class="item-row">
                         <div style="display:flex; align-items:center; gap:8px; flex:1;">
-                            <button class="btn-action ${item.recurring ? 'active' : ''}" onclick="toggleRecurring('${type}', ${idx})">↻</button>
+                            ${type !== 'epargne' ? 
+                                `<button class="btn-action ${item.recurring ? 'active' : ''}" onclick="toggleRecurring('${type}', ${idx})">↻</button>` 
+                                : '<div style="width:25px"></div>'}
                             <input class="editable" value="${item.category}" onblur="updateItem('${type}', ${idx}, 'category', this.value)">
                         </div>
                         <input class="editable amount-input" type="number" value="${item.amount}" onblur="updateItem('${type}', ${idx}, 'amount', this.value)">
@@ -182,13 +185,15 @@
             const key = `${currentYear}_${months[currentMonthIdx]}`;
             userData[key][type][idx][field] = field === 'amount' ? parseFloat(val) || 0 : val;
             
-            if (userData[key][type][idx].recurring) {
+            // La récurrence ne s'applique pas à l'épargne selon ta demande
+            if (userData[key][type][idx].recurring && type !== 'epargne') {
                 propagateChange(type, userData[key][type][idx]);
             }
             save();
         }
 
         function toggleRecurring(type, idx) {
+            if (type === 'epargne') return;
             const key = `${currentYear}_${months[currentMonthIdx]}`;
             const item = userData[key][type][idx];
             item.recurring = !item.recurring;
@@ -201,7 +206,6 @@
             save();
         }
 
-        // CORRECTION : On propage sur les 12 prochains mois réels
         function propagateChange(type, item) {
             let tempMonth = currentMonthIdx;
             let tempYear = currentYear;
@@ -211,14 +215,11 @@
                 if (tempMonth > 11) { tempMonth = 0; tempYear++; }
                 
                 const mKey = `${tempYear}_${months[tempMonth]}`;
-                
-                // Si le mois n'existe pas, on l'initialise
                 if (!userData[mKey]) initMonthData(tempYear, tempMonth);
                 if (!userData[mKey][type]) userData[mKey][type] = [];
 
                 const existingIdx = userData[mKey][type].findIndex(it => it.category === item.category);
                 if (existingIdx > -1) {
-                    // On garde l'état récurrent à true
                     userData[mKey][type][existingIdx] = { ...item, recurring: true };
                 } else {
                     userData[mKey][type].push({ ...item, recurring: true });
@@ -226,7 +227,6 @@
             }
         }
 
-        // CORRECTION : On supprime sur les 12 prochains mois réels
         function removeFromFuture(type, category) {
             let tempMonth = currentMonthIdx;
             let tempYear = currentYear;
@@ -245,7 +245,7 @@
         function addItem(type) {
             const key = `${currentYear}_${months[currentMonthIdx]}`;
             if(!userData[key][type]) userData[key][type] = [];
-            userData[key][type].push({ category: type === 'epargne' ? "À épargner" : "Nouveau", amount: 0, recurring: false });
+            userData[key][type].push({ category: type === 'epargne' ? "Nom de l'épargne" : "Nouveau", amount: 0, recurring: false });
             save();
         }
 
@@ -270,7 +270,7 @@
         }
 
         async function save() {
-            render();
+            render(); // Met à jour les calculs visuels avant la sauvegarde
             await db.collection("users").doc(currentUser.uid).set(userData);
         }
     </script>

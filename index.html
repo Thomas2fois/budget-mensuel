@@ -142,7 +142,6 @@
 
         function calculateGlobalSavings() {
             let total = 0;
-            // On parcourt toutes les clés de la BDD pour sommer l'épargne
             Object.keys(userData).forEach(monthKey => {
                 if (userData[monthKey].epargne) {
                     userData[monthKey].epargne.forEach(item => {
@@ -182,25 +181,81 @@
         function updateItem(type, idx, field, val) {
             const key = `${currentYear}_${months[currentMonthIdx]}`;
             userData[key][type][idx][field] = field === 'amount' ? parseFloat(val) || 0 : val;
+            
+            // Si l'item est récurrent, on met aussi à jour les mois futurs
+            if (userData[key][type][idx].recurring) {
+                propagateChange(type, userData[key][type][idx]);
+            }
             save();
         }
 
         function toggleRecurring(type, idx) {
             const key = `${currentYear}_${months[currentMonthIdx]}`;
-            userData[key][type][idx].recurring = !userData[key][type][idx].recurring;
+            const item = userData[key][type][idx];
+            item.recurring = !item.recurring;
+
+            if (item.recurring) {
+                // On propage l'item dans tous les mois futurs
+                propagateChange(type, item);
+            } else {
+                // On supprime l'item des mois futurs
+                removeFromFuture(type, item.category);
+            }
             save();
+        }
+
+        function propagateChange(type, item) {
+            let startFound = false;
+            // On parcourt tous les mois de l'année (et potentiellement des années suivantes stockées)
+            Object.keys(userData).sort().forEach(mKey => {
+                const currentKey = `${currentYear}_${months[currentMonthIdx]}`;
+                if (mKey === currentKey) startFound = true;
+                
+                if (startFound && mKey !== currentKey) {
+                    if (!userData[mKey][type]) userData[mKey][type] = [];
+                    
+                    const existingIdx = userData[mKey][type].findIndex(i => i.category === item.category);
+                    if (existingIdx > -1) {
+                        userData[mKey][type][existingIdx] = { ...item };
+                    } else {
+                        userData[mKey][type].push({ ...item });
+                    }
+                }
+            });
+        }
+
+        function removeFromFuture(type, category) {
+            let startFound = false;
+            Object.keys(userData).sort().forEach(mKey => {
+                const currentKey = `${currentYear}_${months[currentMonthIdx]}`;
+                if (mKey === currentKey) startFound = true;
+
+                if (startFound && mKey !== currentKey) {
+                    if (userData[mKey][type]) {
+                        userData[mKey][type] = userData[mKey][type].filter(i => i.category !== category);
+                    }
+                }
+            });
         }
 
         function addItem(type) {
             const key = `${currentYear}_${months[currentMonthIdx]}`;
             if(!userData[key][type]) userData[key][type] = [];
-            userData[key][type].push({ category: type === 'epargne' ? "À épargner" : "Nouveau", amount: 0, recurring: type === 'epargne' });
+            userData[key][type].push({ category: type === 'epargne' ? "À épargner" : "Nouveau", amount: 0, recurring: false });
             save();
         }
 
         function deleteItem(type, idx) {
             const key = `${currentYear}_${months[currentMonthIdx]}`;
+            const category = userData[key][type][idx].category;
+            const isRecurring = userData[key][type][idx].recurring;
+            
             userData[key][type].splice(idx, 1);
+            
+            // Si on supprime un élément récurrent, on le nettoie aussi du futur
+            if (isRecurring) {
+                removeFromFuture(type, category);
+            }
             save();
         }
 

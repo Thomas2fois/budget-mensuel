@@ -8,18 +8,23 @@
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
     <style>
-        :root { --blue: #007aff; --bg: #f5f5f7; --red: #ff3b30; --green: #34c759; }
+        :root { --blue: #007aff; --bg: #f5f5f7; --red: #ff3b30; --green: #34c759; --orange: #ff9500; }
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: -apple-system, sans-serif; }
         body { background: var(--bg); color: #1d1d1f; padding-bottom: 40px; }
         header { background: white; padding: 15px 25px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 1px 0 rgba(0,0,0,0.05); }
         .avatar { width: 35px; height: 35px; border-radius: 50%; background: var(--blue); color: white; display: flex; align-items: center; justify-content: center; font-weight: bold; }
-        main { max-width: 1100px; margin: 20px auto; padding: 0 20px; }
+        main { max-width: 1200px; margin: 20px auto; padding: 0 20px; }
         .dashboard-grid { display: grid; grid-template-columns: 1fr; gap: 20px; }
-        @media (min-width: 900px) { .dashboard-grid { grid-template-columns: 1fr 1fr 1fr; } .top-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; grid-column: span 3; } }
+        @media (min-width: 900px) { 
+            .dashboard-grid { grid-template-columns: 1fr 1fr 1fr 1fr; } 
+            .top-cards { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; grid-column: span 4; } 
+        }
         .card { background: white; padding: 25px; border-radius: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.03); }
-        .summary-card { background: var(--blue); color: white; text-align: center; cursor: pointer; transition: transform 0.2s; }
+        .summary-card { color: white; text-align: center; cursor: pointer; transition: transform 0.2s; }
         .summary-card:active { transform: scale(0.98); }
-        .summary-card.savings { background: var(--green); cursor: default; }
+        .summary-card.blue { background: var(--blue); }
+        .summary-card.orange { background: var(--orange); }
+        .summary-card.green { background: var(--green); cursor: default; }
         .nav-bar { display: flex; justify-content: space-between; align-items: center; margin: 20px 0; }
         .nav-bar button { border: none; background: white; width: 40px; height: 40px; border-radius: 12px; cursor: pointer; font-size: 18px; }
         .section-title { margin-bottom: 15px; color: #8e8e93; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; display: flex; justify-content: space-between; }
@@ -33,7 +38,6 @@
         .btn-action.active { opacity: 1; color: var(--blue); font-weight: bold; }
         .add-btn { width: 100%; padding: 12px; margin-top: 15px; border-radius: 12px; border: 1px dashed #d1d1d6; background: transparent; color: var(--blue); font-weight: 600; cursor: pointer; }
 
-        /* Modal Styles */
         .modal { display: none; position: fixed; z-index: 100; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); backdrop-filter: blur(5px); }
         .modal-content { background: white; margin: 10% auto; padding: 25px; width: 90%; max-width: 500px; border-radius: 24px; position: relative; }
         .close-modal { position: absolute; right: 20px; top: 20px; font-size: 24px; cursor: pointer; opacity: 0.3; }
@@ -57,14 +61,17 @@
 
         <div class="dashboard-grid">
             <div class="top-cards">
-                <div class="card summary-card" onclick="openSpendingModal()">
+                <div class="card summary-card blue" onclick="openModal('spendingModal')">
                     <div style="font-size: 14px; opacity: 0.8;">Reste à vivre (disponible)</div>
-                    <div id="restant" style="font-size: 38px; font-weight: 800; margin-top: 5px;">0 €</div>
-                    <div style="font-size: 11px; margin-top: 5px; opacity: 0.7;">Cliquez pour noter vos dépenses</div>
+                    <div id="restant" style="font-size: 32px; font-weight: 800; margin-top: 5px;">0 €</div>
                 </div>
-                <div class="card summary-card savings">
+                <div class="card summary-card orange" onclick="openModal('coursesModal')">
+                    <div style="font-size: 14px; opacity: 0.8;">Budget Courses Restant</div>
+                    <div id="courses-restant" style="font-size: 32px; font-weight: 800; margin-top: 5px;">0 €</div>
+                </div>
+                <div class="card summary-card green">
                     <div style="font-size: 14px; opacity: 0.8;">Épargne cumulée à ce jour</div>
-                    <div id="total-savings-box" style="font-size: 38px; font-weight: 800; margin-top: 5px;">0 €</div>
+                    <div id="total-savings-box" style="font-size: 32px; font-weight: 800; margin-top: 5px;">0 €</div>
                 </div>
             </div>
 
@@ -81,6 +88,11 @@
             </div>
 
             <div class="card">
+                <div class="section-title">Budget Courses 🛒 <span id="sub-budget_courses" class="total-mini">0€</span></div>
+                <div id="list-budget_courses"></div>
+            </div>
+
+            <div class="card">
                 <div class="section-title">Épargne du mois 💰 <span id="sub-epargne" class="total-mini">0€</span></div>
                 <div id="list-epargne"></div>
             </div>
@@ -89,13 +101,19 @@
 
     <div id="spendingModal" class="modal">
         <div class="modal-content">
-            <span class="close-modal" onclick="closeSpendingModal()">✕</span>
-            <h3 style="margin-bottom: 20px;">Dépenses quotidiennes</h3>
+            <span class="close-modal" onclick="closeModal('spendingModal')">✕</span>
+            <h3 style="margin-bottom: 20px;">Dépenses quotidiennes (Reste à vivre)</h3>
             <div id="list-depenses"></div>
             <button class="add-btn" onclick="addItem('depenses')">+ Noter un achat</button>
-            <div style="margin-top: 20px; padding-top: 15px; border-top: 1px solid #eee; text-align: right; font-weight: bold;">
-                Total dépensé : <span id="total-depenses-mini" style="color: var(--red);">0 €</span>
-            </div>
+        </div>
+    </div>
+
+    <div id="coursesModal" class="modal">
+        <div class="modal-content">
+            <span class="close-modal" onclick="closeModal('coursesModal')">✕</span>
+            <h3 style="margin-bottom: 20px;">Détails des courses</h3>
+            <div id="list-tickets_courses"></div>
+            <button class="add-btn" onclick="addItem('tickets_courses')">+ Ajouter un ticket</button>
         </div>
     </div>
 
@@ -115,7 +133,6 @@
         const now = new Date();
         let currentYear = now.getFullYear();
         let currentMonthIdx = now.getMonth();
-        
         let currentUser = null;
         let userData = {};
 
@@ -143,25 +160,20 @@
                 const prevKey = `${prevYear}_${months[prevIdx]}`;
                 
                 const newData = { 
-                    revenus: [], 
-                    charges: [], 
-                    depenses: [], 
-                    epargne: [
-                        { category: "À épargner", amount: 0, recurring: false },
-                        { category: "Retiré", amount: 0, recurring: false }
-                    ] 
+                    revenus: [], charges: [], depenses: [], tickets_courses: [],
+                    budget_courses: [{ category: "Budget courses global", amount: 0, recurring: false }],
+                    epargne: [{ category: "À épargner", amount: 0 }, { category: "Retiré", amount: 0 }] 
                 };
                 if (userData[prevKey]) {
-                    ['revenus', 'charges'].forEach(type => {
+                    ['revenus', 'charges', 'budget_courses'].forEach(type => {
                         newData[type] = (userData[prevKey][type] || []).filter(i => i.recurring).map(i => ({ ...i }));
                     });
                 }
                 userData[key] = newData;
             }
-            if (!userData[key].epargne || userData[key].epargne.length < 2) {
-                userData[key].epargne = [{ category: "À épargner", amount: 0 }, { category: "Retiré", amount: 0 }];
-            }
-            if (!userData[key].depenses) userData[key].depenses = [];
+            if (!userData[key].budget_courses) userData[key].budget_courses = [{ category: "Budget courses global", amount: 0, recurring: false }];
+            userData[key].budget_courses[0].category = "Budget courses global";
+            if (!userData[key].tickets_courses) userData[key].tickets_courses = [];
         }
 
         function calculateSavingsUntilNow() {
@@ -170,7 +182,7 @@
                 for (let m = 0; m < 12; m++) {
                     if (y === currentYear && m > currentMonthIdx) break;
                     const key = `${y}_${months[m]}`;
-                    if (userData[key] && userData[key].epargne) {
+                    if (userData[key]?.epargne) {
                         total += ((parseFloat(userData[key].epargne[0].amount) || 0) - (parseFloat(userData[key].epargne[1].amount) || 0));
                     }
                 }
@@ -181,9 +193,9 @@
         function render() {
             const key = `${currentYear}_${months[currentMonthIdx]}`;
             document.getElementById('month-label').innerText = `${months[currentMonthIdx]} ${currentYear}`;
-            let totals = { revenus: 0, charges: 0, epargne: 0, depenses: 0 };
+            let totals = { revenus: 0, charges: 0, epargne: 0, depenses: 0, budget_courses: 0, tickets_courses: 0 };
 
-            ['revenus', 'charges', 'epargne', 'depenses'].forEach(type => {
+            ['revenus', 'charges', 'epargne', 'depenses', 'budget_courses', 'tickets_courses'].forEach(type => {
                 const list = userData[key][type] || [];
                 if (type === 'epargne') {
                     totals[type] = (parseFloat(list[0]?.amount) || 0) - (parseFloat(list[1]?.amount) || 0);
@@ -195,47 +207,53 @@
                     document.getElementById(`sub-${type}`).innerText = `${totals[type]} €`;
                 }
 
-                const targetList = type === 'depenses' ? 'list-depenses' : `list-${type}`;
-                document.getElementById(targetList).innerHTML = list.map((item, idx) => `
-                    <div class="item-row">
-                        <div style="display:flex; align-items:center; gap:8px; flex:1;">
-                            ${(type !== 'epargne' && type !== 'depenses') ? 
-                                `<button class="btn-action ${item.recurring ? 'active' : ''}" onclick="toggleRecurring('${type}', ${idx})">↻</button>` 
+                let targetId = `list-${type}`;
+                if (type === 'depenses') targetId = 'list-depenses';
+                if (type === 'tickets_courses') targetId = 'list-tickets_courses';
+
+                const element = document.getElementById(targetId);
+                if (element) {
+                    element.innerHTML = list.map((item, idx) => `
+                        <div class="item-row">
+                            <div style="display:flex; align-items:center; gap:8px; flex:1;">
+                                ${(type !== 'epargne' && type !== 'depenses' && type !== 'tickets_courses') ? 
+                                    `<button class="btn-action ${item.recurring ? 'active' : ''}" onclick="toggleRecurring('${type}', ${idx})">↻</button>` 
+                                    : '<div style="width:25px"></div>'}
+                                <input class="editable" value="${item.category}" onfocus="this.select()"
+                                    ${(type === 'epargne' || type === 'budget_courses') ? 'readonly' : `onblur="updateItem('${type}', ${idx}, 'category', this.value)"`}>
+                            </div>
+                            <input class="editable amount-input" type="number" value="${item.amount}" onfocus="this.select()"
+                                style="color: ${(type === 'epargne' && idx === 1) || type === 'depenses' || type === 'tickets_courses' ? 'var(--red)' : 'var(--blue)'}"
+                                onblur="updateItem('${type}', ${idx}, 'amount', this.value)">
+                            ${type !== 'epargne' && type !== 'budget_courses' ? 
+                                `<button class="btn-action" style="color:var(--red);opacity:0.2;" onclick="deleteItem('${type}', ${idx})">✕</button>` 
                                 : '<div style="width:25px"></div>'}
-                            <input class="editable" value="${item.category}" 
-                                onfocus="this.select()"
-                                ${type === 'epargne' ? 'readonly' : `onblur="updateItem('${type}', ${idx}, 'category', this.value)"`}>
                         </div>
-                        <input class="editable amount-input" type="number" value="${item.amount}" 
-                            onfocus="this.select()"
-                            style="color: ${(type === 'epargne' && idx === 1) || type === 'depenses' ? 'var(--red)' : 'var(--blue)'}"
-                            onblur="updateItem('${type}', ${idx}, 'amount', this.value)">
-                        ${type !== 'epargne' ? 
-                            `<button class="btn-action" style="color:var(--red);opacity:0.2;" onclick="deleteItem('${type}', ${idx})">✕</button>` 
-                            : '<div style="width:25px"></div>'}
-                    </div>
-                `).join('');
+                    `).join('');
+                }
             });
 
-            const netRestant = totals.revenus - totals.charges - totals.epargne - totals.depenses;
+            // LOGIQUE DE CALCUL DES CARTES
+            const netRestant = totals.revenus - totals.charges - totals.epargne - totals.depenses - totals.budget_courses;
+            const coursesRestant = totals.budget_courses - totals.tickets_courses;
+
             document.getElementById('restant').innerText = `${netRestant} €`;
+            document.getElementById('courses-restant').innerText = `${coursesRestant} €`;
             document.getElementById('total-savings-box').innerText = `${calculateSavingsUntilNow()} €`;
-            document.getElementById('total-depenses-mini').innerText = `${totals.depenses} €`;
         }
 
-        function openSpendingModal() { document.getElementById('spendingModal').style.display = 'block'; }
-        function closeSpendingModal() { document.getElementById('spendingModal').style.display = 'none'; }
-        window.onclick = (e) => { if(e.target == document.getElementById('spendingModal')) closeSpendingModal(); }
+        function openModal(id) { document.getElementById(id).style.display = 'block'; }
+        function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+        window.onclick = (e) => { if(e.classList?.contains('modal')) e.style.display = 'none'; }
 
         function updateItem(type, idx, field, val) {
             const key = `${currentYear}_${months[currentMonthIdx]}`;
             userData[key][type][idx][field] = field === 'amount' ? parseFloat(val) || 0 : val;
-            if (userData[key][type][idx].recurring && type !== 'epargne') propagateChange(type, userData[key][type][idx]);
+            if (userData[key][type][idx].recurring) propagateChange(type, userData[key][type][idx]);
             save();
         }
 
         function toggleRecurring(type, idx) {
-            if (type === 'epargne' || type === 'depenses') return;
             const key = `${currentYear}_${months[currentMonthIdx]}`;
             const item = userData[key][type][idx];
             item.recurring = !item.recurring;
@@ -244,36 +262,34 @@
         }
 
         function propagateChange(type, item) {
-            let tempMonth = currentMonthIdx; let tempYear = currentYear;
+            let m = currentMonthIdx; let y = currentYear;
             for (let i = 0; i < 12; i++) {
-                tempMonth++; if (tempMonth > 11) { tempMonth = 0; tempYear++; }
-                const mKey = `${tempYear}_${months[tempMonth]}`;
-                if (!userData[mKey]) initMonthData(tempYear, tempMonth);
-                const exIdx = userData[mKey][type].findIndex(it => it.category === item.category);
-                if (exIdx > -1) userData[mKey][type][exIdx] = { ...item, recurring: true };
-                else userData[mKey][type].push({ ...item, recurring: true });
+                m++; if (m > 11) { m = 0; y++; }
+                const k = `${y}_${months[m]}`;
+                if (!userData[k]) initMonthData(y, m);
+                const ex = userData[k][type].findIndex(it => it.category === item.category);
+                if (ex > -1) userData[k][type][ex] = { ...item };
+                else userData[k][type].push({ ...item });
             }
         }
 
         function removeFromFuture(type, category) {
-            let tempMonth = currentMonthIdx; let tempYear = currentYear;
+            let m = currentMonthIdx; let y = currentYear;
             for (let i = 0; i < 12; i++) {
-                tempMonth++; if (tempMonth > 11) { tempMonth = 0; tempYear++; }
-                const mKey = `${tempYear}_${months[tempMonth]}`;
-                if (userData[mKey]) userData[mKey][type] = userData[mKey][type].filter(it => it.category !== category);
+                m++; if (m > 11) { m = 0; y++; }
+                const k = `${y}_${months[m]}`;
+                if (userData[k]) userData[k][type] = userData[k][type].filter(it => it.category !== category);
             }
         }
 
         function addItem(type) {
-            if (type === 'epargne') return;
             const key = `${currentYear}_${months[currentMonthIdx]}`;
-            const newItem = { category: type === 'depenses' ? "Dépense" : "Nouveau", amount: 0, recurring: false };
+            const newItem = { category: (type.includes('courses') ? "Courses" : "Nouveau"), amount: 0, recurring: false };
             userData[key][type].push(newItem);
             save();
         }
 
         function deleteItem(type, idx) {
-            if (type === 'epargne') return;
             const key = `${currentYear}_${months[currentMonthIdx]}`;
             if (userData[key][type][idx].recurring) removeFromFuture(type, userData[key][type][idx].category);
             userData[key][type].splice(idx, 1);
@@ -288,10 +304,7 @@
             render();
         }
 
-        async function save() {
-            render();
-            await db.collection("users").doc(currentUser.uid).set(userData);
-        }
+        async function save() { render(); await db.collection("users").doc(currentUser.uid).set(userData); }
     </script>
 </body>
 </html>

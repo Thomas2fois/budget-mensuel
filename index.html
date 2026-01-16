@@ -16,11 +16,10 @@
         
         main { max-width: 1400px; margin: 10px auto; padding: 0 15px; }
         
-        /* GRILLE MOBILE (Par défaut) */
+        /* GRILLE RESPONSIVE */
         .dashboard-grid { display: grid; grid-template-columns: 1fr; gap: 15px; }
         .top-cards { display: grid; grid-template-columns: 1fr; gap: 10px; }
 
-        /* GRILLE PC (Écrans larges) */
         @media (min-width: 1024px) { 
             .dashboard-grid { grid-template-columns: repeat(4, 1fr); gap: 20px; } 
             .top-cards { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; grid-column: span 4; } 
@@ -50,8 +49,29 @@
         .btn-action.active { opacity: 1; color: var(--blue); font-weight: bold; }
         .add-btn { width: 100%; padding: 12px; margin-top: 10px; border-radius: 12px; border: 1px dashed #d1d1d6; background: transparent; color: var(--blue); font-weight: 600; cursor: pointer; font-size: 14px; }
 
-        .modal { display: none; position: fixed; z-index: 100; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.4); backdrop-filter: blur(8px); }
-        .modal-content { background: white; margin: 15% auto; padding: 25px; width: 92%; max-width: 500px; border-radius: 28px; position: relative; }
+        /* MODAL AVEC FIX IPHONE */
+        .modal { 
+            display: none; 
+            position: fixed; 
+            z-index: 100; 
+            left: 0; 
+            top: 0; 
+            width: 100%; 
+            height: 100%; 
+            background: rgba(0,0,0,0.4); 
+            backdrop-filter: blur(8px); 
+            cursor: pointer; /* Indispensable pour iOS */
+        }
+        .modal-content { 
+            background: white; 
+            margin: 15% auto; 
+            padding: 25px; 
+            width: 92%; 
+            max-width: 500px; 
+            border-radius: 28px; 
+            position: relative; 
+            cursor: default; /* On remet le curseur normal à l'intérieur */
+        }
         @media (max-width: 600px) { .modal-content { margin: 20% auto; padding: 20px; } }
         .close-modal { position: absolute; right: 20px; top: 20px; font-size: 24px; cursor: pointer; opacity: 0.3; }
     </style>
@@ -95,8 +115,8 @@
         </div>
     </main>
 
-    <div id="spendingModal" class="modal"><div class="modal-content"><span class="close-modal" onclick="closeModal('spendingModal')">✕</span><h3 style="margin-bottom: 20px;">Dépenses quotidiennes</h3><div id="list-depenses"></div><button class="add-btn" onclick="addItem('depenses')">+ Noter un achat</button></div></div>
-    <div id="coursesModal" class="modal"><div class="modal-content"><span class="close-modal" onclick="closeModal('coursesModal')">✕</span><h3 style="margin-bottom: 20px;">Détails des courses</h3><div id="list-tickets_courses"></div><button class="add-btn" onclick="addItem('tickets_courses')">+ Ajouter un ticket</button></div></div>
+    <div id="spendingModal" class="modal"><div class="modal-content" onclick="event.stopPropagation()"><span class="close-modal" onclick="closeModal('spendingModal')">✕</span><h3 style="margin-bottom: 20px;">Dépenses quotidiennes</h3><div id="list-depenses"></div><button class="add-btn" onclick="addItem('depenses')">+ Noter un achat</button></div></div>
+    <div id="coursesModal" class="modal"><div class="modal-content" onclick="event.stopPropagation()"><span class="close-modal" onclick="closeModal('coursesModal')">✕</span><h3 style="margin-bottom: 20px;">Détails des courses</h3><div id="list-tickets_courses"></div><button class="add-btn" onclick="addItem('tickets_courses')">+ Ajouter un ticket</button></div></div>
 
     <script>
         const firebaseConfig = {
@@ -207,7 +227,14 @@
 
         function openModal(id) { document.getElementById(id).style.display = 'block'; }
         function closeModal(id) { document.getElementById(id).style.display = 'none'; }
-        window.onclick = (e) => { if(e.target.classList.contains('modal')) e.target.style.display = 'none'; }
+        
+        // GESTION FERMETURE MODAL (FIX IPHONE)
+        window.onclick = function(event) {
+            if (event.target.classList.contains('modal')) {
+                closeModal('spendingModal');
+                closeModal('coursesModal');
+            }
+        };
 
         function updateItem(type, idx, field, val) {
             const key = `${currentYear}_${months[currentMonthIdx]}`;

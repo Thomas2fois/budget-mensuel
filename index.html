@@ -15,7 +15,6 @@
         .avatar { width: 32px; height: 32px; border-radius: 50%; background: var(--blue); color: white; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 14px; }
         
         main { max-width: 1400px; margin: 10px auto; padding: 0 15px; }
-        
         .dashboard-grid { display: grid; grid-template-columns: 1fr; gap: 15px; }
         .top-cards { display: grid; grid-template-columns: 1fr; gap: 10px; }
 
@@ -48,37 +47,49 @@
         .btn-action.active { opacity: 1; color: var(--blue); font-weight: bold; }
         .add-btn { width: 100%; padding: 12px; margin-top: 10px; border-radius: 12px; border: 1px dashed #d1d1d6; background: transparent; color: var(--blue); font-weight: 600; cursor: pointer; font-size: 14px; }
 
-        /* MODAL AVEC SCROLL INTERNE */
+        /* MODAL FINAL : CENTRÉ ET PROPRE */
         .modal { 
             display: none; 
             position: fixed; 
             z-index: 100; 
-            left: 0; 
-            top: 0; 
-            width: 100%; 
-            height: 100%; 
+            left: 0; top: 0; width: 100%; height: 100%; 
             background: rgba(0,0,0,0.4); 
             backdrop-filter: blur(8px); 
             cursor: pointer;
+            /* Centrage vertical Mac/PC */
+            display: none; align-items: center; justify-content: center;
         }
         .modal-content { 
             background: white; 
-            margin: 10% auto; 
-            padding: 25px; 
             width: 92%; 
-            max-width: 500px; 
+            max-width: 450px; 
             border-radius: 28px; 
             position: relative; 
             cursor: default;
-            /* FIX SCROLL */
-            max-height: 85vh; 
+            max-height: 80vh; 
             overflow-y: auto; 
             -webkit-overflow-scrolling: touch;
+            padding: 0 25px 25px 25px; /* Padding haut à 0 car le titre est en sticky */
         }
-        @media (max-width: 600px) { .modal-content { margin: 15% auto; padding: 20px; } }
-        .close-modal { position: sticky; top: -5px; float: right; font-size: 24px; cursor: pointer; opacity: 0.3; z-index: 10; background: white; width: 30px; height: 30px; text-align: center; border-radius: 50%; }
         
-        body.modal-open { overflow: hidden; height: 100vh; }
+        .modal-header {
+            position: sticky;
+            top: 0;
+            background: white;
+            padding: 25px 0 15px 0;
+            z-index: 20;
+            margin-bottom: 5px;
+        }
+
+        .close-modal { 
+            position: absolute; right: 0; top: 25px; 
+            font-size: 20px; cursor: pointer; opacity: 0.3; 
+        }
+        
+        body.modal-open { overflow: hidden; }
+
+        /* Espace de sécurité pour le clavier iPhone */
+        .keyboard-spacer { height: 0px; transition: height 0.3s; }
     </style>
 </head>
 <body onclick="">
@@ -122,19 +133,25 @@
 
     <div id="spendingModal" class="modal" onclick="closeModal('spendingModal')">
         <div class="modal-content" onclick="event.stopPropagation()">
-            <span class="close-modal" onclick="closeModal('spendingModal')">✕</span>
-            <h3 style="margin-bottom: 20px; position: sticky; top: 0; background: white; padding-bottom: 10px;">Dépenses quotidiennes</h3>
+            <div class="modal-header">
+                <span class="close-modal" onclick="closeModal('spendingModal')">✕</span>
+                <h3 style="font-size: 20px;">Dépenses quotidiennes</h3>
+            </div>
             <div id="list-depenses"></div>
             <button class="add-btn" onclick="addItem('depenses')">+ Noter un achat</button>
+            <div class="keyboard-spacer"></div>
         </div>
     </div>
 
     <div id="coursesModal" class="modal" onclick="closeModal('coursesModal')">
         <div class="modal-content" onclick="event.stopPropagation()">
-            <span class="close-modal" onclick="closeModal('coursesModal')">✕</span>
-            <h3 style="margin-bottom: 20px; position: sticky; top: 0; background: white; padding-bottom: 10px;">Détails des courses</h3>
+            <div class="modal-header">
+                <span class="close-modal" onclick="closeModal('coursesModal')">✕</span>
+                <h3 style="font-size: 20px;">Détails des courses</h3>
+            </div>
             <div id="list-tickets_courses"></div>
             <button class="add-btn" onclick="addItem('tickets_courses')">+ Ajouter un ticket</button>
+            <div class="keyboard-spacer"></div>
         </div>
     </div>
 
@@ -210,12 +227,12 @@
                                 ${(type !== 'epargne' && type !== 'depenses' && type !== 'tickets_courses' && type !== 'budget_courses') ? `<button class="btn-action ${item.recurring ? 'active' : ''}" onclick="toggleRecurring('${type}', ${idx})">↻</button>` : '<div style="width:25px"></div>'}
                                 <input class="editable" value="${item.category}" 
                                     onfocus="handleFocus(this)" 
-                                    ${(type === 'epargne' || (type === 'budget_courses' && idx === 0)) ? 'readonly' : `onblur="updateItem('${type}', ${idx}, 'category', this.value)"`}>
+                                    onblur="handleBlur(this, '${type}', ${idx}, 'category')">
                             </div>
                             <input class="editable amount-input" type="number" inputmode="decimal" value="${item.amount}" 
                                 onfocus="handleFocus(this)" 
                                 style="color: ${(type === 'epargne' && idx === 1) || type === 'depenses' || type === 'tickets_courses' ? 'var(--red)' : 'var(--blue)'}" 
-                                onblur="updateItem('${type}', ${idx}, 'amount', this.value)">
+                                onblur="handleBlur(this, '${type}', ${idx}, 'amount')">
                             ${type !== 'epargne' && (type !== 'budget_courses' || idx !== 0) ? `<button class="btn-action" style="color:var(--red);opacity:0.2;" onclick="deleteItem('${type}', ${idx})">✕</button>` : '<div style="width:25px"></div>'}
                         </div>`).join('');
                 }
@@ -236,16 +253,28 @@
             document.getElementById('total-savings-box').innerText = `${Math.round(cumule)} €`;
         }
 
-        // FIX CLAVIER IPHONE : Remonte la ligne au dessus du clavier
+        // --- GESTION IPHONE & CLAVIER ---
         function handleFocus(el) {
             el.select();
+            // On ajoute un grand espace en bas du modal pour permettre le scroll au dessus du clavier
+            const spacer = el.closest('.modal-content').querySelector('.keyboard-spacer');
+            if (spacer) spacer.style.height = "300px";
+            
             setTimeout(() => {
                 el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            }, 300);
+            }, 400);
+        }
+
+        function handleBlur(el, type, idx, field) {
+            // On réduit l'espace quand on quitte la saisie
+            const spacer = el.closest('.modal-content').querySelector('.keyboard-spacer');
+            if (spacer) spacer.style.height = "0px";
+            updateItem(type, idx, field, el.value);
         }
 
         function openModal(id) { 
-            document.getElementById(id).style.display = 'block'; 
+            const m = document.getElementById(id);
+            m.style.display = 'flex'; 
             document.body.classList.add('modal-open');
         }
         function closeModal(id) { 
@@ -269,7 +298,6 @@
         }
 
         function toggleRecurring(type, idx) {
-            if (type === 'budget_courses') return;
             const key = `${currentYear}_${months[currentMonthIdx]}`;
             const item = userData[key][type][idx];
             item.recurring = !item.recurring;
@@ -305,9 +333,8 @@
             const key = `${currentYear}_${months[currentMonthIdx]}`;
             userData[key][type].push({ category: (type === 'tickets_courses' ? "Courses" : "Nouveau"), amount: 0, recurring: false });
             save();
-            // Scroll vers le bas pour voir la nouvelle ligne
             setTimeout(() => {
-                const modal = document.querySelector('.modal[style*="block"] .modal-content');
+                const modal = document.querySelector('.modal[style*="flex"] .modal-content');
                 if(modal) modal.scrollTop = modal.scrollHeight;
             }, 100);
         }

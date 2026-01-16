@@ -6,7 +6,7 @@
     <title>Connexion | Gestion de Budget</title>
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
-        import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, setPersistence, browserLocalPersistence, browserSessionPersistence, GoogleAuthProvider, signInWithPopup } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js";
+        import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, setPersistence, browserLocalPersistence, browserSessionPersistence, GoogleAuthProvider, signInWithPopup, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js";
         import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js";
 
         const firebaseConfig = {
@@ -22,38 +22,67 @@
         const auth = getAuth(app);
         const db = getFirestore(app);
 
+        // Vérification si déjà connecté
+        onAuthStateChanged(auth, (user) => {
+            if (user) window.location.href = "index.html";
+        });
+
         const initializeUserDocument = async (user) => {
             const userRef = doc(db, "users", user.uid);
             const userSnap = await getDoc(userRef);
             if (!userSnap.exists()) {
                 const currentMonthKey = "2026_Janvier";
-                await setDoc(userRef, { [currentMonthKey]: { budget_courses: [{ amount: 0, category: "Budget", recurring: true }], charges: [], depenses: [], epargne: [{ amount: 0, category: "À épargner" }, { amount: 0, category: "Retiré" }], revenus: [] } });
+                await setDoc(userRef, { 
+                    [currentMonthKey]: { 
+                        budget_courses: [{ amount: 0, category: "Budget", recurring: true }], 
+                        charges: [], 
+                        depenses: [], 
+                        epargne: [{ amount: 0, category: "À épargner" }, { amount: 0, category: "Retiré" }], 
+                        revenus: [] 
+                    } 
+                });
             }
         };
 
         window.addEventListener('DOMContentLoaded', () => {
             const savedEmail = localStorage.getItem('rememberedEmail');
-            if (savedEmail) { document.getElementById('email').value = savedEmail; document.getElementById('remember').checked = true; }
+            if (savedEmail) { 
+                document.getElementById('email').value = savedEmail; 
+                document.getElementById('remember').checked = true; 
+            }
         });
 
         window.loginWithGoogle = async () => {
             const provider = new GoogleAuthProvider();
+            const errorMsg = document.getElementById('error-msg');
             try {
                 await setPersistence(auth, browserLocalPersistence);
                 const result = await signInWithPopup(auth, provider);
                 await initializeUserDocument(result.user);
                 window.location.href = "index.html";
-            } catch (err) { document.getElementById('error-msg').innerText = "Erreur Google : " + err.message; }
+            } catch (err) { 
+                errorMsg.innerText = "Erreur Google : " + err.message; 
+            }
         };
 
         window.toggleAuth = () => {
             const title = document.getElementById('auth-title');
             const btn = document.getElementById('auth-btn');
             const link = document.getElementById('auth-link');
+            const errorMsg = document.getElementById('error-msg');
+            
+            errorMsg.innerText = ""; // Reset erreur au switch
+            
             if (btn.dataset.mode === 'login') {
-                title.innerText = "Créer un compte"; btn.innerText = "S'inscrire"; btn.dataset.mode = 'signup'; link.innerText = "Déjà un compte ? Se connecter";
+                title.innerText = "Créer un compte"; 
+                btn.innerText = "S'inscrire"; 
+                btn.dataset.mode = 'signup'; 
+                link.innerText = "Déjà un compte ? Se connecter";
             } else {
-                title.innerText = "Bienvenue"; btn.innerText = "Se connecter"; btn.dataset.mode = 'login'; link.innerText = "Pas de compte ? Créer une session";
+                title.innerText = "Bienvenue"; 
+                btn.innerText = "Se connecter"; 
+                btn.dataset.mode = 'login'; 
+                link.innerText = "Pas de compte ? Créer une session";
             }
         };
 
@@ -64,16 +93,38 @@
             const password = document.getElementById('password').value;
             const rememberMe = document.getElementById('remember').checked;
             const btn = document.getElementById('auth-btn');
-            btn.disabled = true; btn.innerText = "Chargement...";
+            const errorMsg = document.getElementById('error-msg');
+
+            btn.disabled = true; 
+            btn.innerText = "Chargement...";
+            errorMsg.innerText = "";
+
             try {
                 await setPersistence(auth, rememberMe ? browserLocalPersistence : browserSessionPersistence);
-                if (rememberMe) localStorage.setItem('rememberedEmail', email); else localStorage.removeItem('rememberedEmail');
-                const userCredential = mode === 'login' ? await signInWithEmailAndPassword(auth, email, password) : await createUserWithEmailAndPassword(auth, email, password);
+                
+                if (rememberMe) localStorage.setItem('rememberedEmail', email); 
+                else localStorage.removeItem('rememberedEmail');
+
+                const userCredential = mode === 'login' 
+                    ? await signInWithEmailAndPassword(auth, email, password) 
+                    : await createUserWithEmailAndPassword(auth, email, password);
+                
                 await initializeUserDocument(userCredential.user);
                 window.location.href = "index.html";
             } catch (err) {
-                btn.disabled = false; btn.innerText = mode === 'login' ? "Se connecter" : "S'inscrire";
-                document.getElementById('error-msg').innerText = "Erreur : Identifiants incorrects.";
+                btn.disabled = false; 
+                btn.innerText = mode === 'login' ? "Se connecter" : "S'inscrire";
+                
+                // Message d'erreur plus précis selon le code Firebase
+                if (err.code === 'auth/user-not-found' || err.code === 'auth/wrong-password') {
+                    errorMsg.innerText = "Email ou mot de passe incorrect.";
+                } else if (err.code === 'auth/email-already-in-use') {
+                    errorMsg.innerText = "Cet email est déjà utilisé.";
+                } else if (err.code === 'auth/weak-password') {
+                    errorMsg.innerText = "Le mot de passe doit faire au moins 6 caractères.";
+                } else {
+                    errorMsg.innerText = "Erreur : " + err.message;
+                }
             }
         };
     </script>
@@ -85,29 +136,37 @@
         body { font-family: -apple-system, sans-serif; background: var(--bg); display: flex; align-items: center; justify-content: center; min-height: 100vh; margin: 0; color: var(--text); transition: 0.3s; }
         .login-card { background: var(--card); padding: 40px; border-radius: 30px; box-shadow: 0 20px 40px rgba(0,0,0,0.1); width: 90%; max-width: 400px; text-align: center; }
         .logo-container { width: 70px; height: 70px; background: var(--blue); margin: 0 auto 20px; border-radius: 18px; display: flex; align-items: center; justify-content: center; }
-        input { width: 100%; padding: 16px; margin-bottom: 16px; border: 1px solid #d1d1d6; border-radius: 14px; font-size: 16px; background: var(--input-bg); color: var(--text); box-sizing: border-box; }
-        button { width: 100%; padding: 16px; background: var(--blue); color: white; border: none; border-radius: 14px; font-size: 17px; font-weight: 600; cursor: pointer; }
-        .btn-google { background: var(--card); color: var(--text); border: 1px solid #d1d1d6; margin-top: 15px; display: flex; align-items: center; justify-content: center; gap: 10px; }
-        .toggle-link { margin-top: 25px; display: block; color: var(--blue); font-size: 14px; cursor: pointer; }
-        #error-msg { color: #ff3b30; font-size: 13px; margin-top: 15px; }
+        input[type="email"], input[type="password"] { width: 100%; padding: 16px; margin-bottom: 16px; border: 1px solid #d1d1d6; border-radius: 14px; font-size: 16px; background: var(--input-bg); color: var(--text); box-sizing: border-box; }
+        button { width: 100%; padding: 16px; background: var(--blue); color: white; border: none; border-radius: 14px; font-size: 17px; font-weight: 600; cursor: pointer; margin-bottom: 10px; transition: opacity 0.2s; }
+        button:disabled { opacity: 0.7; cursor: not-allowed; }
+        .btn-google { background: var(--card); color: var(--text); border: 1px solid #d1d1d6; margin-top: 5px; display: flex; align-items: center; justify-content: center; gap: 10px; }
+        .toggle-link { margin-top: 25px; display: block; color: var(--blue); font-size: 14px; cursor: pointer; text-decoration: none; }
+        #error-msg { color: #ff3b30; font-size: 13px; margin-top: 15px; min-height: 1.2em; }
+        .remember-container { display: flex; align-items: center; gap: 8px; margin-bottom: 20px; font-size: 14px; opacity: 0.8; cursor: pointer; }
+        .remember-container input { width: 18px; height: 18px; margin: 0; cursor: pointer; }
     </style>
 </head>
 <body>
     <div class="login-card">
         <div class="logo-container">
-            <svg width="35" height="35" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>
+            <svg width="35" height="35" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5">
+                <line x1="18" y1="20" x2="18" y2="10"></line>
+                <line x1="12" y1="20" x2="12" y2="4"></line>
+                <line x1="6" y1="20" x2="6" y2="14"></line>
+            </svg>
         </div>
         <h1 id="auth-title">Bienvenue</h1>
         <form onsubmit="handleAuth(event)">
-            <input type="email" id="email" placeholder="Adresse email" required>
-            <input type="password" id="password" placeholder="Mot de passe" required>
-            <div style="display:flex; gap:8px; margin-bottom: 20px; font-size: 14px; opacity: 0.8;">
-                <input type="checkbox" id="remember" style="width:18px; height:18px; margin:0;"> Se souvenir de moi
-            </div>
+            <input type="email" id="email" placeholder="Adresse email" required autocomplete="email">
+            <input type="password" id="password" placeholder="Mot de passe" required autocomplete="current-password">
+            <label class="remember-container">
+                <input type="checkbox" id="remember"> Se souvenir de moi
+            </label>
             <button type="submit" id="auth-btn" data-mode="login">Se connecter</button>
         </form>
         <button class="btn-google" onclick="loginWithGoogle()">
-            <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" width="20"> Continuer avec Google
+            <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" width="20" alt="Google"> 
+            Continuer avec Google
         </button>
         <a class="toggle-link" id="auth-link" onclick="toggleAuth()">Pas de compte ? Créer une session</a>
         <div id="error-msg"></div>

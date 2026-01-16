@@ -47,7 +47,6 @@
         .btn-action.active { opacity: 1; color: var(--blue); font-weight: bold; }
         .add-btn { width: 100%; padding: 12px; margin-top: 10px; border-radius: 12px; border: 1px dashed #d1d1d6; background: transparent; color: var(--blue); font-weight: 600; cursor: pointer; font-size: 14px; }
 
-        /* MODAL FINAL : CENTRÉ ET PROPRE */
         .modal { 
             display: none; 
             position: fixed; 
@@ -56,8 +55,7 @@
             background: rgba(0,0,0,0.4); 
             backdrop-filter: blur(8px); 
             cursor: pointer;
-            /* Centrage vertical Mac/PC */
-            display: none; align-items: center; justify-content: center;
+            align-items: center; justify-content: center;
         }
         .modal-content { 
             background: white; 
@@ -69,7 +67,7 @@
             max-height: 80vh; 
             overflow-y: auto; 
             -webkit-overflow-scrolling: touch;
-            padding: 0 25px 25px 25px; /* Padding haut à 0 car le titre est en sticky */
+            padding: 0 25px 25px 25px;
         }
         
         .modal-header {
@@ -87,8 +85,6 @@
         }
         
         body.modal-open { overflow: hidden; }
-
-        /* Espace de sécurité pour le clavier iPhone */
         .keyboard-spacer { height: 0px; transition: height 0.3s; }
     </style>
 </head>
@@ -253,20 +249,16 @@
             document.getElementById('total-savings-box').innerText = `${Math.round(cumule)} €`;
         }
 
-        // --- GESTION IPHONE & CLAVIER ---
         function handleFocus(el) {
             el.select();
-            // On ajoute un grand espace en bas du modal pour permettre le scroll au dessus du clavier
             const spacer = el.closest('.modal-content').querySelector('.keyboard-spacer');
             if (spacer) spacer.style.height = "300px";
-            
             setTimeout(() => {
                 el.scrollIntoView({ behavior: 'smooth', block: 'center' });
             }, 400);
         }
 
         function handleBlur(el, type, idx, field) {
-            // On réduit l'espace quand on quitte la saisie
             const spacer = el.closest('.modal-content').querySelector('.keyboard-spacer');
             if (spacer) spacer.style.height = "0px";
             updateItem(type, idx, field, el.value);
@@ -274,11 +266,12 @@
 
         function openModal(id) { 
             const m = document.getElementById(id);
-            m.style.display = 'flex'; 
+            m.style.display = 'flex'; // On force le display flex ici
             document.body.classList.add('modal-open');
         }
         function closeModal(id) { 
-            document.getElementById(id).style.display = 'none'; 
+            const m = document.getElementById(id);
+            m.style.display = 'none'; 
             document.body.classList.remove('modal-open');
         }
 
@@ -331,12 +324,14 @@
 
         function addItem(type) {
             const key = `${currentYear}_${months[currentMonthIdx]}`;
+            if (!userData[key][type]) userData[key][type] = [];
             userData[key][type].push({ category: (type === 'tickets_courses' ? "Courses" : "Nouveau"), amount: 0, recurring: false });
             save();
+            // On attend que le render soit fini pour scroller
             setTimeout(() => {
                 const modal = document.querySelector('.modal[style*="flex"] .modal-content');
                 if(modal) modal.scrollTop = modal.scrollHeight;
-            }, 100);
+            }, 200);
         }
 
         function deleteItem(type, idx) {

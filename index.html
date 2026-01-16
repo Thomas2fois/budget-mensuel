@@ -10,7 +10,7 @@
     <style>
         :root { --blue: #007aff; --bg: #f5f5f7; --red: #ff3b30; --green: #34c759; --orange: #ff9500; }
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: -apple-system, sans-serif; }
-        body { background: var(--bg); color: #1d1d1f; padding-bottom: 40px; overflow-x: hidden; }
+        body { background: var(--bg); color: #1d1d1f; padding-bottom: 40px; overflow-x: hidden; -webkit-tap-highlight-color: transparent; }
         header { background: white; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 1px 0 rgba(0,0,0,0.05); }
         .avatar { width: 32px; height: 32px; border-radius: 50%; background: var(--blue); color: white; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 14px; }
         
@@ -49,7 +49,7 @@
         .btn-action.active { opacity: 1; color: var(--blue); font-weight: bold; }
         .add-btn { width: 100%; padding: 12px; margin-top: 10px; border-radius: 12px; border: 1px dashed #d1d1d6; background: transparent; color: var(--blue); font-weight: 600; cursor: pointer; font-size: 14px; }
 
-        /* MODAL AVEC FIX IPHONE */
+        /* MODAL AVEC FIX IPHONE FINAL */
         .modal { 
             display: none; 
             position: fixed; 
@@ -60,7 +60,8 @@
             height: 100%; 
             background: rgba(0,0,0,0.4); 
             backdrop-filter: blur(8px); 
-            cursor: pointer; /* Indispensable pour iOS */
+            cursor: pointer;
+            -webkit-tap-highlight-color: transparent;
         }
         .modal-content { 
             background: white; 
@@ -70,14 +71,16 @@
             max-width: 500px; 
             border-radius: 28px; 
             position: relative; 
-            cursor: default; /* On remet le curseur normal à l'intérieur */
+            cursor: default;
         }
         @media (max-width: 600px) { .modal-content { margin: 20% auto; padding: 20px; } }
         .close-modal { position: absolute; right: 20px; top: 20px; font-size: 24px; cursor: pointer; opacity: 0.3; }
+        
+        /* Bloquer le scroll quand modal ouvert */
+        body.modal-open { overflow: hidden; height: 100vh; }
     </style>
 </head>
-<body>
-    <header>
+<body onclick=""> <header>
         <div style="display:flex; align-items:center; gap:10px;">
             <div id="user-avatar" class="avatar">?</div>
             <span id="user-email" style="font-size: 14px; font-weight: 600;">...</span>
@@ -115,8 +118,23 @@
         </div>
     </main>
 
-    <div id="spendingModal" class="modal"><div class="modal-content" onclick="event.stopPropagation()"><span class="close-modal" onclick="closeModal('spendingModal')">✕</span><h3 style="margin-bottom: 20px;">Dépenses quotidiennes</h3><div id="list-depenses"></div><button class="add-btn" onclick="addItem('depenses')">+ Noter un achat</button></div></div>
-    <div id="coursesModal" class="modal"><div class="modal-content" onclick="event.stopPropagation()"><span class="close-modal" onclick="closeModal('coursesModal')">✕</span><h3 style="margin-bottom: 20px;">Détails des courses</h3><div id="list-tickets_courses"></div><button class="add-btn" onclick="addItem('tickets_courses')">+ Ajouter un ticket</button></div></div>
+    <div id="spendingModal" class="modal" onclick="closeModal('spendingModal')">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <span class="close-modal" onclick="closeModal('spendingModal')">✕</span>
+            <h3 style="margin-bottom: 20px;">Dépenses quotidiennes</h3>
+            <div id="list-depenses"></div>
+            <button class="add-btn" onclick="addItem('depenses')">+ Noter un achat</button>
+        </div>
+    </div>
+
+    <div id="coursesModal" class="modal" onclick="closeModal('coursesModal')">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <span class="close-modal" onclick="closeModal('coursesModal')">✕</span>
+            <h3 style="margin-bottom: 20px;">Détails des courses</h3>
+            <div id="list-tickets_courses"></div>
+            <button class="add-btn" onclick="addItem('tickets_courses')">+ Ajouter un ticket</button>
+        </div>
+    </div>
 
     <script>
         const firebaseConfig = {
@@ -159,12 +177,7 @@
                 let prevIdx = monthIdx - 1; let prevYear = year;
                 if (prevIdx < 0) { prevIdx = 11; prevYear--; }
                 const prevKey = `${prevYear}_${months[prevIdx]}`;
-                
-                const newData = { 
-                    revenus: [], charges: [], depenses: [], tickets_courses: [],
-                    budget_courses: [{ category: "Budget", amount: 0, recurring: true }],
-                    epargne: [{ category: "À épargner", amount: 0 }, { category: "Retiré", amount: 0 }] 
-                };
+                const newData = { revenus: [], charges: [], depenses: [], tickets_courses: [], budget_courses: [{ category: "Budget", amount: 0, recurring: true }], epargne: [{ category: "À épargner", amount: 0 }, { category: "Retiré", amount: 0 }] };
                 if (userData[prevKey]) {
                     ['revenus', 'charges', 'budget_courses'].forEach(type => {
                         newData[type] = (userData[prevKey][type] || []).filter(i => i.recurring).map(i => ({ ...i }));
@@ -172,9 +185,6 @@
                 }
                 userData[key] = newData;
             }
-            if (!userData[key].budget_courses) userData[key].budget_courses = [{ category: "Budget", amount: 0, recurring: true }];
-            userData[key].budget_courses[0].category = "Budget";
-            userData[key].budget_courses[0].recurring = true;
         }
 
         function render() {
@@ -184,11 +194,9 @@
 
             ['revenus', 'charges', 'epargne', 'depenses', 'budget_courses', 'tickets_courses'].forEach(type => {
                 const list = userData[key][type] || [];
-                if (type === 'epargne') {
-                    totals[type] = (parseFloat(list[0]?.amount) || 0) - (parseFloat(list[1]?.amount) || 0);
-                } else {
-                    totals[type] = list.reduce((s, i) => s + (parseFloat(i.amount) || 0), 0);
-                }
+                if (type === 'epargne') totals[type] = (parseFloat(list[0]?.amount) || 0) - (parseFloat(list[1]?.amount) || 0);
+                else totals[type] = list.reduce((s, i) => s + (parseFloat(i.amount) || 0), 0);
+                
                 if (document.getElementById(`sub-${type}`)) document.getElementById(`sub-${type}`).innerText = `${Math.round(totals[type])} €`;
 
                 let targetId = type === 'depenses' ? 'list-depenses' : type === 'tickets_courses' ? 'list-tickets_courses' : `list-${type}`;
@@ -197,14 +205,10 @@
                     element.innerHTML = list.map((item, idx) => `
                         <div class="item-row">
                             <div style="display:flex; align-items:center; gap:8px; flex:1;">
-                                ${(type !== 'epargne' && type !== 'depenses' && type !== 'tickets_courses' && type !== 'budget_courses') ? 
-                                    `<button class="btn-action ${item.recurring ? 'active' : ''}" onclick="toggleRecurring('${type}', ${idx})">↻</button>` : '<div style="width:25px"></div>'}
-                                <input class="editable" value="${item.category}" onfocus="this.select()"
-                                    ${(type === 'epargne' || (type === 'budget_courses' && idx === 0)) ? 'readonly' : `onblur="updateItem('${type}', ${idx}, 'category', this.value)"`}>
+                                ${(type !== 'epargne' && type !== 'depenses' && type !== 'tickets_courses' && type !== 'budget_courses') ? `<button class="btn-action ${item.recurring ? 'active' : ''}" onclick="toggleRecurring('${type}', ${idx})">↻</button>` : '<div style="width:25px"></div>'}
+                                <input class="editable" value="${item.category}" onfocus="this.select()" ${(type === 'epargne' || (type === 'budget_courses' && idx === 0)) ? 'readonly' : `onblur="updateItem('${type}', ${idx}, 'category', this.value)"`}>
                             </div>
-                            <input class="editable amount-input" type="number" inputmode="decimal" value="${item.amount}" onfocus="this.select()"
-                                style="color: ${(type === 'epargne' && idx === 1) || type === 'depenses' || type === 'tickets_courses' ? 'var(--red)' : 'var(--blue)'}"
-                                onblur="updateItem('${type}', ${idx}, 'amount', this.value)">
+                            <input class="editable amount-input" type="number" inputmode="decimal" value="${item.amount}" onfocus="this.select()" style="color: ${(type === 'epargne' && idx === 1) || type === 'depenses' || type === 'tickets_courses' ? 'var(--red)' : 'var(--blue)'}" onblur="updateItem('${type}', ${idx}, 'amount', this.value)">
                             ${type !== 'epargne' && (type !== 'budget_courses' || idx !== 0) ? `<button class="btn-action" style="color:var(--red);opacity:0.2;" onclick="deleteItem('${type}', ${idx})">✕</button>` : '<div style="width:25px"></div>'}
                         </div>`).join('');
                 }
@@ -225,16 +229,14 @@
             document.getElementById('total-savings-box').innerText = `${Math.round(cumule)} €`;
         }
 
-        function openModal(id) { document.getElementById(id).style.display = 'block'; }
-        function closeModal(id) { document.getElementById(id).style.display = 'none'; }
-        
-        // GESTION FERMETURE MODAL (FIX IPHONE)
-        window.onclick = function(event) {
-            if (event.target.classList.contains('modal')) {
-                closeModal('spendingModal');
-                closeModal('coursesModal');
-            }
-        };
+        function openModal(id) { 
+            document.getElementById(id).style.display = 'block'; 
+            document.body.classList.add('modal-open');
+        }
+        function closeModal(id) { 
+            document.getElementById(id).style.display = 'none'; 
+            document.body.classList.remove('modal-open');
+        }
 
         function updateItem(type, idx, field, val) {
             const key = `${currentYear}_${months[currentMonthIdx]}`;
@@ -258,9 +260,8 @@
                 m++; if (m > 11) { m = 0; y++; }
                 const k = `${y}_${months[m]}`;
                 if (!userData[k]) initMonthData(y, m);
-                if (type === 'budget_courses') {
-                    userData[k][type][0].amount = item.amount;
-                } else {
+                if (type === 'budget_courses') userData[k][type][0].amount = item.amount;
+                else {
                     const ex = userData[k][type].findIndex(it => it.category === item.category);
                     if (ex > -1) userData[k][type][ex] = { ...item };
                     else userData[k][type].push({ ...item });

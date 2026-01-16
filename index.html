@@ -16,7 +16,6 @@
         
         main { max-width: 1400px; margin: 10px auto; padding: 0 15px; }
         
-        /* GRILLE RESPONSIVE */
         .dashboard-grid { display: grid; grid-template-columns: 1fr; gap: 15px; }
         .top-cards { display: grid; grid-template-columns: 1fr; gap: 10px; }
 
@@ -49,7 +48,7 @@
         .btn-action.active { opacity: 1; color: var(--blue); font-weight: bold; }
         .add-btn { width: 100%; padding: 12px; margin-top: 10px; border-radius: 12px; border: 1px dashed #d1d1d6; background: transparent; color: var(--blue); font-weight: 600; cursor: pointer; font-size: 14px; }
 
-        /* MODAL AVEC FIX IPHONE FINAL */
+        /* MODAL AVEC SCROLL INTERNE */
         .modal { 
             display: none; 
             position: fixed; 
@@ -61,26 +60,29 @@
             background: rgba(0,0,0,0.4); 
             backdrop-filter: blur(8px); 
             cursor: pointer;
-            -webkit-tap-highlight-color: transparent;
         }
         .modal-content { 
             background: white; 
-            margin: 15% auto; 
+            margin: 10% auto; 
             padding: 25px; 
             width: 92%; 
             max-width: 500px; 
             border-radius: 28px; 
             position: relative; 
             cursor: default;
+            /* FIX SCROLL */
+            max-height: 85vh; 
+            overflow-y: auto; 
+            -webkit-overflow-scrolling: touch;
         }
-        @media (max-width: 600px) { .modal-content { margin: 20% auto; padding: 20px; } }
-        .close-modal { position: absolute; right: 20px; top: 20px; font-size: 24px; cursor: pointer; opacity: 0.3; }
+        @media (max-width: 600px) { .modal-content { margin: 15% auto; padding: 20px; } }
+        .close-modal { position: sticky; top: -5px; float: right; font-size: 24px; cursor: pointer; opacity: 0.3; z-index: 10; background: white; width: 30px; height: 30px; text-align: center; border-radius: 50%; }
         
-        /* Bloquer le scroll quand modal ouvert */
         body.modal-open { overflow: hidden; height: 100vh; }
     </style>
 </head>
-<body onclick=""> <header>
+<body onclick="">
+    <header>
         <div style="display:flex; align-items:center; gap:10px;">
             <div id="user-avatar" class="avatar">?</div>
             <span id="user-email" style="font-size: 14px; font-weight: 600;">...</span>
@@ -121,7 +123,7 @@
     <div id="spendingModal" class="modal" onclick="closeModal('spendingModal')">
         <div class="modal-content" onclick="event.stopPropagation()">
             <span class="close-modal" onclick="closeModal('spendingModal')">✕</span>
-            <h3 style="margin-bottom: 20px;">Dépenses quotidiennes</h3>
+            <h3 style="margin-bottom: 20px; position: sticky; top: 0; background: white; padding-bottom: 10px;">Dépenses quotidiennes</h3>
             <div id="list-depenses"></div>
             <button class="add-btn" onclick="addItem('depenses')">+ Noter un achat</button>
         </div>
@@ -130,7 +132,7 @@
     <div id="coursesModal" class="modal" onclick="closeModal('coursesModal')">
         <div class="modal-content" onclick="event.stopPropagation()">
             <span class="close-modal" onclick="closeModal('coursesModal')">✕</span>
-            <h3 style="margin-bottom: 20px;">Détails des courses</h3>
+            <h3 style="margin-bottom: 20px; position: sticky; top: 0; background: white; padding-bottom: 10px;">Détails des courses</h3>
             <div id="list-tickets_courses"></div>
             <button class="add-btn" onclick="addItem('tickets_courses')">+ Ajouter un ticket</button>
         </div>
@@ -206,9 +208,14 @@
                         <div class="item-row">
                             <div style="display:flex; align-items:center; gap:8px; flex:1;">
                                 ${(type !== 'epargne' && type !== 'depenses' && type !== 'tickets_courses' && type !== 'budget_courses') ? `<button class="btn-action ${item.recurring ? 'active' : ''}" onclick="toggleRecurring('${type}', ${idx})">↻</button>` : '<div style="width:25px"></div>'}
-                                <input class="editable" value="${item.category}" onfocus="this.select()" ${(type === 'epargne' || (type === 'budget_courses' && idx === 0)) ? 'readonly' : `onblur="updateItem('${type}', ${idx}, 'category', this.value)"`}>
+                                <input class="editable" value="${item.category}" 
+                                    onfocus="handleFocus(this)" 
+                                    ${(type === 'epargne' || (type === 'budget_courses' && idx === 0)) ? 'readonly' : `onblur="updateItem('${type}', ${idx}, 'category', this.value)"`}>
                             </div>
-                            <input class="editable amount-input" type="number" inputmode="decimal" value="${item.amount}" onfocus="this.select()" style="color: ${(type === 'epargne' && idx === 1) || type === 'depenses' || type === 'tickets_courses' ? 'var(--red)' : 'var(--blue)'}" onblur="updateItem('${type}', ${idx}, 'amount', this.value)">
+                            <input class="editable amount-input" type="number" inputmode="decimal" value="${item.amount}" 
+                                onfocus="handleFocus(this)" 
+                                style="color: ${(type === 'epargne' && idx === 1) || type === 'depenses' || type === 'tickets_courses' ? 'var(--red)' : 'var(--blue)'}" 
+                                onblur="updateItem('${type}', ${idx}, 'amount', this.value)">
                             ${type !== 'epargne' && (type !== 'budget_courses' || idx !== 0) ? `<button class="btn-action" style="color:var(--red);opacity:0.2;" onclick="deleteItem('${type}', ${idx})">✕</button>` : '<div style="width:25px"></div>'}
                         </div>`).join('');
                 }
@@ -229,6 +236,14 @@
             document.getElementById('total-savings-box').innerText = `${Math.round(cumule)} €`;
         }
 
+        // FIX CLAVIER IPHONE : Remonte la ligne au dessus du clavier
+        function handleFocus(el) {
+            el.select();
+            setTimeout(() => {
+                el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }, 300);
+        }
+
         function openModal(id) { 
             document.getElementById(id).style.display = 'block'; 
             document.body.classList.add('modal-open');
@@ -238,8 +253,16 @@
             document.body.classList.remove('modal-open');
         }
 
+        window.onclick = function(event) {
+            if (event.target.classList.contains('modal')) {
+                closeModal('spendingModal');
+                closeModal('coursesModal');
+            }
+        };
+
         function updateItem(type, idx, field, val) {
             const key = `${currentYear}_${months[currentMonthIdx]}`;
+            if(!userData[key][type][idx]) return;
             userData[key][type][idx][field] = field === 'amount' ? parseFloat(val) || 0 : val;
             if (type === 'budget_courses' || userData[key][type][idx].recurring) propagateChange(type, userData[key][type][idx]);
             save();
@@ -282,6 +305,11 @@
             const key = `${currentYear}_${months[currentMonthIdx]}`;
             userData[key][type].push({ category: (type === 'tickets_courses' ? "Courses" : "Nouveau"), amount: 0, recurring: false });
             save();
+            // Scroll vers le bas pour voir la nouvelle ligne
+            setTimeout(() => {
+                const modal = document.querySelector('.modal[style*="block"] .modal-content');
+                if(modal) modal.scrollTop = modal.scrollHeight;
+            }, 100);
         }
 
         function deleteItem(type, idx) {

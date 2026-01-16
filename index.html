@@ -209,11 +209,19 @@
 
             ['revenus', 'charges', 'epargne', 'depenses', 'budget_courses', 'tickets_courses'].forEach(type => {
                 const list = userData[key][type] || [];
-                if (type === 'epargne') totals[type] = (parseFloat(list[0]?.amount) || 0) - (parseFloat(list[1]?.amount) || 0);
-                else totals[type] = list.reduce((s, i) => s + (parseFloat(i.amount) || 0), 0);
                 
-                if (document.getElementById(`sub-${type}`)) document.getElementById(`sub-${type}`).innerText = `${Math.round(totals[type])} €`;
+                // Calcul des totaux
+                if (type === 'epargne') {
+                    totals[type] = (parseFloat(list[0]?.amount) || 0) - (parseFloat(list[1]?.amount) || 0);
+                } else {
+                    totals[type] = list.reduce((s, i) => s + (parseFloat(i.amount) || 0), 0);
+                }
+                
+                if (document.getElementById(`sub-${type}`)) {
+                    document.getElementById(`sub-${type}`).innerText = `${Math.round(totals[type])} €`;
+                }
 
+                // Remplissage des listes
                 let targetId = type === 'depenses' ? 'list-depenses' : type === 'tickets_courses' ? 'list-tickets_courses' : `list-${type}`;
                 const element = document.getElementById(targetId);
                 if (element) {
@@ -223,27 +231,33 @@
                                 ${(type !== 'epargne' && type !== 'depenses' && type !== 'tickets_courses' && type !== 'budget_courses') ? `<button class="btn-action ${item.recurring ? 'active' : ''}" onclick="toggleRecurring('${type}', ${idx})">↻</button>` : '<div style="width:25px"></div>'}
                                 <input class="editable" value="${item.category}" 
                                     onfocus="handleFocus(this)" 
-                                    onblur="handleBlur(this, '${type}', ${idx}, 'category')">
+                                    onchange="updateItem('${type}', ${idx}, 'category', this.value)"
+                                    onblur="handleBlur(this)">
                             </div>
                             <input class="editable amount-input" type="number" inputmode="decimal" value="${item.amount}" 
                                 onfocus="handleFocus(this)" 
                                 style="color: ${(type === 'epargne' && idx === 1) || type === 'depenses' || type === 'tickets_courses' ? 'var(--red)' : 'var(--blue)'}" 
-                                onblur="handleBlur(this, '${type}', ${idx}, 'amount')">
+                                onchange="updateItem('${type}', ${idx}, 'amount', this.value)"
+                                onblur="handleBlur(this)">
                             ${type !== 'epargne' && (type !== 'budget_courses' || idx !== 0) ? `<button class="btn-action" style="color:var(--red);opacity:0.2;" onclick="deleteItem('${type}', ${idx})">✕</button>` : '<div style="width:25px"></div>'}
                         </div>`).join('');
                 }
             });
 
+            // Calculs finaux
             const netRestant = totals.revenus - totals.charges - totals.epargne - totals.depenses - totals.budget_courses;
             document.getElementById('restant').innerText = `${Math.round(netRestant)} €`;
             document.getElementById('courses-restant').innerText = `${Math.round(totals.budget_courses - totals.tickets_courses)} €`;
             
+            // Épargne cumulée
             let cumule = 0;
             for (let y = 2025; y <= currentYear; y++) {
                 for (let m = 0; m < 12; m++) {
                     if (y === currentYear && m > currentMonthIdx) break;
                     const k = `${y}_${months[m]}`;
-                    if (userData[k]?.epargne) cumule += ((parseFloat(userData[k].epargne[0].amount) || 0) - (parseFloat(userData[k].epargne[1].amount) || 0));
+                    if (userData[k]?.epargne) {
+                        cumule += ((parseFloat(userData[k].epargne[0].amount) || 0) - (parseFloat(userData[k].epargne[1].amount) || 0));
+                    }
                 }
             }
             document.getElementById('total-savings-box').innerText = `${Math.round(cumule)} €`;
@@ -251,24 +265,30 @@
 
         function handleFocus(el) {
             el.select();
-            const spacer = el.closest('.modal-content').querySelector('.keyboard-spacer');
-            if (spacer) spacer.style.height = "300px";
-            setTimeout(() => {
-                el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            }, 400);
+            const modalContent = el.closest('.modal-content');
+            if (modalContent) {
+                const spacer = modalContent.querySelector('.keyboard-spacer');
+                if (spacer) spacer.style.height = "300px";
+                setTimeout(() => {
+                    el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }, 400);
+            }
         }
 
-        function handleBlur(el, type, idx, field) {
-            const spacer = el.closest('.modal-content').querySelector('.keyboard-spacer');
-            if (spacer) spacer.style.height = "0px";
-            updateItem(type, idx, field, el.value);
+        function handleBlur(el) {
+            const modalContent = el.closest('.modal-content');
+            if (modalContent) {
+                const spacer = modalContent.querySelector('.keyboard-spacer');
+                if (spacer) spacer.style.height = "0px";
+            }
         }
 
         function openModal(id) { 
             const m = document.getElementById(id);
-            m.style.display = 'flex'; // On force le display flex ici
+            m.style.display = 'flex';
             document.body.classList.add('modal-open');
         }
+
         function closeModal(id) { 
             const m = document.getElementById(id);
             m.style.display = 'none'; 
@@ -284,9 +304,13 @@
 
         function updateItem(type, idx, field, val) {
             const key = `${currentYear}_${months[currentMonthIdx]}`;
-            if(!userData[key][type][idx]) return;
+            if(!userData[key] || !userData[key][type][idx]) return;
+            
             userData[key][type][idx][field] = field === 'amount' ? parseFloat(val) || 0 : val;
-            if (type === 'budget_courses' || userData[key][type][idx].recurring) propagateChange(type, userData[key][type][idx]);
+            
+            if (type === 'budget_courses' || userData[key][type][idx].recurring) {
+                propagateChange(type, userData[key][type][idx]);
+            }
             save();
         }
 
@@ -304,8 +328,9 @@
                 m++; if (m > 11) { m = 0; y++; }
                 const k = `${y}_${months[m]}`;
                 if (!userData[k]) initMonthData(y, m);
-                if (type === 'budget_courses') userData[k][type][0].amount = item.amount;
-                else {
+                if (type === 'budget_courses') {
+                    if (userData[k][type] && userData[k][type][0]) userData[k][type][0].amount = item.amount;
+                } else {
                     const ex = userData[k][type].findIndex(it => it.category === item.category);
                     if (ex > -1) userData[k][type][ex] = { ...item };
                     else userData[k][type].push({ ...item });
@@ -318,19 +343,26 @@
             for (let i = 0; i < 12; i++) {
                 m++; if (m > 11) { m = 0; y++; }
                 const k = `${y}_${months[m]}`;
-                if (userData[k]) userData[k][type] = userData[k][type].filter(it => it.category !== category);
+                if (userData[k] && userData[k][type]) {
+                    userData[k][type] = userData[k][type].filter(it => it.category !== category);
+                }
             }
         }
 
         function addItem(type) {
             const key = `${currentYear}_${months[currentMonthIdx]}`;
             if (!userData[key][type]) userData[key][type] = [];
-            userData[key][type].push({ category: (type === 'tickets_courses' ? "Courses" : "Nouveau"), amount: 0, recurring: false });
+            
+            userData[key][type].push({ 
+                category: (type === 'tickets_courses' ? "Courses" : "Nouveau"), 
+                amount: 0, 
+                recurring: false 
+            });
             save();
-            // On attend que le render soit fini pour scroller
+            
             setTimeout(() => {
-                const modal = document.querySelector('.modal[style*="flex"] .modal-content');
-                if(modal) modal.scrollTop = modal.scrollHeight;
+                const openModalEl = document.querySelector('.modal[style*="flex"] .modal-content');
+                if(openModalEl) openModalEl.scrollTop = openModalEl.scrollHeight;
             }, 200);
         }
 
@@ -349,7 +381,12 @@
             render();
         }
 
-        async function save() { render(); await db.collection("users").doc(currentUser.uid).set(userData); }
+        async function save() { 
+            render(); 
+            if (currentUser) {
+                await db.collection("users").doc(currentUser.uid).set(userData); 
+            }
+        }
     </script>
 </body>
 </html>

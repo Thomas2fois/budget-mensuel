@@ -4,6 +4,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Mon Budget | 2026</title>
+
+    <link rel="apple-touch-icon" href="logo.png">
+    <link rel="icon" type="image/png" href="logo.png">
+    <meta name="apple-mobile-web-app-title" content="Mon Budget">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
@@ -469,7 +476,6 @@
                 }
                 
                 if (document.getElementById(`sub-${type}`)) {
-                    // Affichage des totaux de sections avec 2 décimales
                     document.getElementById(`sub-${type}`).innerText = `${totals[type].toFixed(2)} €`;
                 }
 
@@ -500,12 +506,10 @@
                 }
             });
 
-            // Calcul netRestant précis
             const netRestant = totals.revenus - totals.charges - totals.epargne - totals.depenses - totals.budget_courses;
             document.getElementById('restant').innerText = `${netRestant.toFixed(2)} €`;
             document.getElementById('courses-restant').innerText = `${(totals.budget_courses - totals.tickets_courses).toFixed(2)} €`;
             
-            // Calcul du cumul d'épargne précis
             let cumule = 0;
             const years = Object.keys(userData).map(k => parseInt(k.split('_')[0]));
             const minYear = Math.min(...years, currentYear);
@@ -564,7 +568,6 @@
         function updateItem(type, idx, field, val) {
             const key = `${currentYear}_${months[currentMonthIdx]}`;
             if(!userData[key] || !userData[key][type][idx]) return;
-            // Utilisation de parseFloat pour garder les décimales lors de l'enregistrement
             userData[key][type][idx][field] = field === 'amount' ? parseFloat(val) || 0 : val;
             if (type === 'budget_courses' || userData[key][type][idx].recurring) {
                 propagateChange(type, userData[key][type][idx]);

@@ -197,7 +197,7 @@
         .amount-input { 
             font-weight: 700; 
             text-align: right; 
-            width: 85px; 
+            width: 100px; 
             color: var(--blue); 
         }
 
@@ -305,15 +305,15 @@
             <div class="top-cards">
                 <div class="card summary-card blue" onclick="openModal('spendingModal')">
                     <div style="font-size: 13px; opacity: 0.9;">Disponible</div>
-                    <div id="restant" style="font-size: 32px; font-weight: 900; margin-top: 4px;">0 €</div>
+                    <div id="restant" style="font-size: 30px; font-weight: 900; margin-top: 4px;">0.00 €</div>
                 </div>
                 <div class="card summary-card orange" onclick="openModal('coursesModal')">
                     <div style="font-size: 13px; opacity: 0.9;">Reste Courses</div>
-                    <div id="courses-restant" style="font-size: 32px; font-weight: 900; margin-top: 4px;">0 €</div>
+                    <div id="courses-restant" style="font-size: 30px; font-weight: 900; margin-top: 4px;">0.00 €</div>
                 </div>
                 <div class="card summary-card green">
                     <div style="font-size: 13px; opacity: 0.9;">Épargne Totale</div>
-                    <div id="total-savings-box" style="font-size: 32px; font-weight: 900; margin-top: 4px;">0 €</div>
+                    <div id="total-savings-box" style="font-size: 30px; font-weight: 900; margin-top: 4px;">0.00 €</div>
                 </div>
             </div>
 
@@ -469,7 +469,8 @@
                 }
                 
                 if (document.getElementById(`sub-${type}`)) {
-                    document.getElementById(`sub-${type}`).innerText = `${Math.round(totals[type])} €`;
+                    // Affichage des totaux de sections avec 2 décimales
+                    document.getElementById(`sub-${type}`).innerText = `${totals[type].toFixed(2)} €`;
                 }
 
                 let targetId = type === 'depenses' ? 'list-depenses' : type === 'tickets_courses' ? 'list-tickets_courses' : `list-${type}`;
@@ -487,7 +488,7 @@
                                     onchange="updateItem('${type}', ${idx}, 'category', this.value)"
                                     onblur="handleBlur(this)">
                             </div>
-                            <input class="editable amount-input" type="number" inputmode="decimal" value="${item.amount}" 
+                            <input class="editable amount-input" type="number" step="0.01" inputmode="decimal" value="${item.amount}" 
                                 onfocus="handleFocus(this)" 
                                 style="color: ${(type === 'epargne' && idx === 1) || type === 'depenses' || type === 'tickets_courses' ? 'var(--red)' : 'var(--blue)'}" 
                                 onchange="updateItem('${type}', ${idx}, 'amount', this.value)"
@@ -499,28 +500,26 @@
                 }
             });
 
+            // Calcul netRestant précis
             const netRestant = totals.revenus - totals.charges - totals.epargne - totals.depenses - totals.budget_courses;
-            document.getElementById('restant').innerText = `${Math.round(netRestant)} €`;
-            document.getElementById('courses-restant').innerText = `${Math.round(totals.budget_courses - totals.tickets_courses)} €`;
+            document.getElementById('restant').innerText = `${netRestant.toFixed(2)} €`;
+            document.getElementById('courses-restant').innerText = `${(totals.budget_courses - totals.tickets_courses).toFixed(2)} €`;
             
-            // --- CORRECTION DU CUMUL ÉPARGNE ---
-            // On calcule le cumul SEULEMENT jusqu'au mois affiché
+            // Calcul du cumul d'épargne précis
             let cumule = 0;
             const years = Object.keys(userData).map(k => parseInt(k.split('_')[0]));
             const minYear = Math.min(...years, currentYear);
             
             for (let y = minYear; y <= currentYear; y++) {
                 for (let m = 0; m < 12; m++) {
-                    // Si on dépasse le mois/année actuel affiché, on arrête le cumul
                     if (y > currentYear || (y === currentYear && m > currentMonthIdx)) break;
-                    
                     const k = `${y}_${months[m]}`;
                     if (userData[k] && userData[k].epargne) {
                         cumule += ((parseFloat(userData[k].epargne[0].amount) || 0) - (parseFloat(userData[k].epargne[1].amount) || 0));
                     }
                 }
             }
-            document.getElementById('total-savings-box').innerText = `${Math.round(cumule)} €`;
+            document.getElementById('total-savings-box').innerText = `${cumule.toFixed(2)} €`;
         }
 
         function handleFocus(el) {
@@ -565,6 +564,7 @@
         function updateItem(type, idx, field, val) {
             const key = `${currentYear}_${months[currentMonthIdx]}`;
             if(!userData[key] || !userData[key][type][idx]) return;
+            // Utilisation de parseFloat pour garder les décimales lors de l'enregistrement
             userData[key][type][idx][field] = field === 'amount' ? parseFloat(val) || 0 : val;
             if (type === 'budget_courses' || userData[key][type][idx].recurring) {
                 propagateChange(type, userData[key][type][idx]);

@@ -164,9 +164,10 @@
         const db = firebase.firestore();
         const months = ["Janvier", "Février", "Mars", "Avril", "Mai", "Juin", "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"];
         
-        const now = new Date();
-        let currentYear = now.getFullYear();
-        let currentMonthIdx = now.getMonth();
+        // Initialisation à la date du jour réelle
+        const today = new Date();
+        let currentYear = today.getFullYear();
+        let currentMonthIdx = today.getMonth();
         let currentUser = null;
         let userData = {};
 
@@ -174,8 +175,6 @@
             if (user) {
                 currentUser = user;
                 document.getElementById('user-email').innerText = user.email;
-                
-                // Gestion de l'avatar (Photo Google ou initiale)
                 const avatar = document.getElementById('user-avatar');
                 if (user.photoURL) {
                     avatar.style.backgroundImage = `url(${user.photoURL})`;
@@ -183,7 +182,6 @@
                 } else {
                     avatar.innerText = user.email[0].toUpperCase();
                 }
-                
                 loadData();
             } else { window.location.href = "login.html"; }
         });
@@ -193,17 +191,19 @@
             if (doc.exists) {
                 userData = doc.data();
             } else {
-                userData = {}; // Nouvel utilisateur
+                userData = {};
             }
+            // Création automatique du mois en cours si inexistant
             initMonthData(currentYear, currentMonthIdx);
             render();
-            // On sauvegarde pour créer le document si c'est un nouvel utilisateur
-            if (!doc.exists) save();
+            // On sauvegarde pour persister la structure du nouveau mois si besoin
+            save();
         }
 
         function initMonthData(year, monthIdx) {
             const key = `${year}_${months[monthIdx]}`;
             if (!userData[key]) {
+                // Chercher le mois précédent pour copier les récurrents
                 let prevIdx = monthIdx - 1; let prevYear = year;
                 if (prevIdx < 0) { prevIdx = 11; prevYear--; }
                 const prevKey = `${prevYear}_${months[prevIdx]}`;
@@ -230,7 +230,6 @@
             const key = `${currentYear}_${months[currentMonthIdx]}`;
             document.getElementById('month-label').innerText = `${months[currentMonthIdx]} ${currentYear}`;
             
-            // Sécurité : si la clé n'existe pas encore dans userData
             if (!userData[key]) return;
 
             let totals = { revenus: 0, charges: 0, epargne: 0, depenses: 0, budget_courses: 0, tickets_courses: 0 };
@@ -275,15 +274,11 @@
             document.getElementById('courses-restant').innerText = `${Math.round(totals.budget_courses - totals.tickets_courses)} €`;
             
             let cumule = 0;
-            for (let y = 2025; y <= currentYear; y++) {
-                for (let m = 0; m < 12; m++) {
-                    if (y === currentYear && m > currentMonthIdx) break;
-                    const k = `${y}_${months[m]}`;
-                    if (userData[k]?.epargne) {
-                        cumule += ((parseFloat(userData[k].epargne[0].amount) || 0) - (parseFloat(userData[k].epargne[1].amount) || 0));
-                    }
+            Object.keys(userData).forEach(k => {
+                if (userData[k].epargne) {
+                    cumule += ((parseFloat(userData[k].epargne[0].amount) || 0) - (parseFloat(userData[k].epargne[1].amount) || 0));
                 }
-            }
+            });
             document.getElementById('total-savings-box').innerText = `${Math.round(cumule)} €`;
         }
 
@@ -329,9 +324,7 @@
         function updateItem(type, idx, field, val) {
             const key = `${currentYear}_${months[currentMonthIdx]}`;
             if(!userData[key] || !userData[key][type][idx]) return;
-            
             userData[key][type][idx][field] = field === 'amount' ? parseFloat(val) || 0 : val;
-            
             if (type === 'budget_courses' || userData[key][type][idx].recurring) {
                 propagateChange(type, userData[key][type][idx]);
             }
@@ -376,14 +369,12 @@
         function addItem(type) {
             const key = `${currentYear}_${months[currentMonthIdx]}`;
             if (!userData[key][type]) userData[key][type] = [];
-            
             userData[key][type].push({ 
                 category: (type === 'tickets_courses' ? "Courses" : "Nouveau"), 
                 amount: 0, 
                 recurring: false 
             });
             save();
-            
             setTimeout(() => {
                 const openModalEl = document.querySelector('.modal[style*="flex"] .modal-content');
                 if(openModalEl) openModalEl.scrollTop = openModalEl.scrollHeight;

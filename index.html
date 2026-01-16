@@ -12,7 +12,7 @@
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: -apple-system, sans-serif; }
         body { background: var(--bg); color: #1d1d1f; padding-bottom: 40px; overflow-x: hidden; -webkit-tap-highlight-color: transparent; }
         header { background: white; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 1px 0 rgba(0,0,0,0.05); }
-        .avatar { width: 32px; height: 32px; border-radius: 50%; background: var(--blue); color: white; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 14px; }
+        .avatar { width: 32px; height: 32px; border-radius: 50%; background: var(--blue); color: white; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 14px; background-size: cover; background-position: center; }
         
         main { max-width: 1400px; margin: 10px auto; padding: 0 15px; }
         .dashboard-grid { display: grid; grid-template-columns: 1fr; gap: 15px; }
@@ -174,16 +174,31 @@
             if (user) {
                 currentUser = user;
                 document.getElementById('user-email').innerText = user.email;
-                document.getElementById('user-avatar').innerText = user.email[0].toUpperCase();
+                
+                // Gestion de l'avatar (Photo Google ou initiale)
+                const avatar = document.getElementById('user-avatar');
+                if (user.photoURL) {
+                    avatar.style.backgroundImage = `url(${user.photoURL})`;
+                    avatar.innerText = "";
+                } else {
+                    avatar.innerText = user.email[0].toUpperCase();
+                }
+                
                 loadData();
             } else { window.location.href = "login.html"; }
         });
 
         async function loadData() {
             const doc = await db.collection("users").doc(currentUser.uid).get();
-            if (doc.exists) userData = doc.data();
+            if (doc.exists) {
+                userData = doc.data();
+            } else {
+                userData = {}; // Nouvel utilisateur
+            }
             initMonthData(currentYear, currentMonthIdx);
             render();
+            // On sauvegarde pour créer le document si c'est un nouvel utilisateur
+            if (!doc.exists) save();
         }
 
         function initMonthData(year, monthIdx) {
@@ -192,7 +207,16 @@
                 let prevIdx = monthIdx - 1; let prevYear = year;
                 if (prevIdx < 0) { prevIdx = 11; prevYear--; }
                 const prevKey = `${prevYear}_${months[prevIdx]}`;
-                const newData = { revenus: [], charges: [], depenses: [], tickets_courses: [], budget_courses: [{ category: "Budget", amount: 0, recurring: true }], epargne: [{ category: "À épargner", amount: 0 }, { category: "Retiré", amount: 0 }] };
+                
+                const newData = { 
+                    revenus: [], 
+                    charges: [], 
+                    depenses: [], 
+                    tickets_courses: [], 
+                    budget_courses: [{ category: "Budget", amount: 0, recurring: true }], 
+                    epargne: [{ category: "À épargner", amount: 0 }, { category: "Retiré", amount: 0 }] 
+                };
+
                 if (userData[prevKey]) {
                     ['revenus', 'charges', 'budget_courses'].forEach(type => {
                         newData[type] = (userData[prevKey][type] || []).filter(i => i.recurring).map(i => ({ ...i }));
@@ -205,12 +229,15 @@
         function render() {
             const key = `${currentYear}_${months[currentMonthIdx]}`;
             document.getElementById('month-label').innerText = `${months[currentMonthIdx]} ${currentYear}`;
+            
+            // Sécurité : si la clé n'existe pas encore dans userData
+            if (!userData[key]) return;
+
             let totals = { revenus: 0, charges: 0, epargne: 0, depenses: 0, budget_courses: 0, tickets_courses: 0 };
 
             ['revenus', 'charges', 'epargne', 'depenses', 'budget_courses', 'tickets_courses'].forEach(type => {
                 const list = userData[key][type] || [];
                 
-                // Calcul des totaux
                 if (type === 'epargne') {
                     totals[type] = (parseFloat(list[0]?.amount) || 0) - (parseFloat(list[1]?.amount) || 0);
                 } else {
@@ -221,7 +248,6 @@
                     document.getElementById(`sub-${type}`).innerText = `${Math.round(totals[type])} €`;
                 }
 
-                // Remplissage des listes
                 let targetId = type === 'depenses' ? 'list-depenses' : type === 'tickets_courses' ? 'list-tickets_courses' : `list-${type}`;
                 const element = document.getElementById(targetId);
                 if (element) {
@@ -244,12 +270,10 @@
                 }
             });
 
-            // Calculs finaux
             const netRestant = totals.revenus - totals.charges - totals.epargne - totals.depenses - totals.budget_courses;
             document.getElementById('restant').innerText = `${Math.round(netRestant)} €`;
             document.getElementById('courses-restant').innerText = `${Math.round(totals.budget_courses - totals.tickets_courses)} €`;
             
-            // Épargne cumulée
             let cumule = 0;
             for (let y = 2025; y <= currentYear; y++) {
                 for (let m = 0; m < 12; m++) {

@@ -86,10 +86,9 @@
             padding: 24px;
             position: relative;
             overflow: hidden;
-            cursor: pointer;
             transition: transform 0.2s ease;
         }
-        .animated-card:active { transform: scale(0.98); }
+        .animated-card:not(.card-green):active { transform: scale(0.98); }
 
         .animated-card::before {
             content: ""; position: absolute; top: -50%; left: -50%; width: 200%; height: 200%;
@@ -99,8 +98,8 @@
 
         @keyframes rotate { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
 
-        .card-blue { background: var(--accent-gradient); box-shadow: 0 20px 40px rgba(71, 118, 230, 0.2); }
-        .card-orange { background: var(--orange-gradient); box-shadow: 0 20px 40px rgba(255, 159, 10, 0.2); }
+        .card-blue { background: var(--accent-gradient); box-shadow: 0 20px 40px rgba(71, 118, 230, 0.2); cursor: pointer; }
+        .card-orange { background: var(--orange-gradient); box-shadow: 0 20px 40px rgba(255, 159, 10, 0.2); cursor: pointer; }
         .card-green { background: var(--green-gradient); box-shadow: 0 20px 40px rgba(50, 215, 75, 0.2); cursor: default; }
 
         .balance-label { font-size: 13px; font-weight: 700; opacity: 0.9; text-transform: uppercase; letter-spacing: 0.5px; position: relative; z-index: 1; }
@@ -158,6 +157,7 @@
             max-height: 85vh; overflow-y: auto; 
             border-top: 1px solid var(--glass-border); 
             animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1); 
+            padding-bottom: 20px;
         }
         @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
 
@@ -206,7 +206,7 @@
                 <div id="courses-restant" class="mini-value">0.00 €</div>
             </div>
             <div class="animated-card card-green">
-                <div class="balance-label">Épargne 💎</div>
+                <div class="balance-label">Épargne 📈</div>
                 <div id="total-savings-box" class="mini-value">0.00 €</div>
             </div>
         </div>
@@ -390,14 +390,14 @@
             document.getElementById('modal-total-depenses').innerText = `${totals.depenses.toFixed(2)} €`;
             document.getElementById('modal-total-tickets').innerText = `${totals.tickets_courses.toFixed(2)} €`;
 
-            // Calcul épargne cumulée
+            // Calcul épargne cumulée (Affichage sans décimales)
             let cumule = 0;
             Object.keys(userData).forEach(k => {
                 if (userData[k]?.epargne) {
                     cumule += ((parseFloat(userData[k].epargne[0].amount) || 0) - (parseFloat(userData[k].epargne[1].amount) || 0));
                 }
             });
-            document.getElementById('total-savings-box').innerText = `${cumule.toFixed(2)} €`;
+            document.getElementById('total-savings-box').innerText = `${Math.round(cumule)} €`;
         }
 
         // LOGIQUE MODIFICATION
@@ -482,14 +482,21 @@
             }
         }
 
-        // UI HELPERS
+        // UI HELPERS (Optimisés pour iPhone)
         function handleFocus(el) {
             el.select();
             const modalContent = el.closest('.modal-content');
             if (modalContent) {
                 const spacer = modalContent.querySelector('.keyboard-spacer');
-                if (spacer) spacer.style.height = "300px";
-                setTimeout(() => el.scrollIntoView({ behavior: 'smooth', block: 'center' }), 400);
+                if (spacer) spacer.style.height = "380px";
+                
+                // Petit délai pour attendre que le clavier soit bien ouvert sur iPhone
+                setTimeout(() => {
+                    el.scrollIntoView({ 
+                        behavior: 'smooth', 
+                        block: 'center' 
+                    });
+                }, 300);
             }
         }
 

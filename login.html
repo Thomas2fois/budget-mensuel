@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    
+    <title>Connexion | Gestion de Budget</title>
+    
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
+        import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, setPersistence, browserLocalPersistence, browserSessionPersistence, GoogleAuthProvider, signInWithPopup, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js";
+        import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyCyt94XDHjrK87gKUwaST01c7CBu_lgCB4",
+            authDomain: "budget-mensuel-52aa9.firebaseapp.com",
+            projectId: "budget-mensuel-52aa9",
+            storageBucket: "budget-mensuel-52aa9.appspot.com",
+            messagingSenderId: "675021368593",
+            appId: "1:675021368593:web:e64239a03c6cff30afb0b0"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        setPersistence(auth, browserLocalPersistence);
+
+        onAuthStateChanged(auth, (user) => {
+            if (user) window.location.href = "index.html";
+        });
+
+        const initializeUserDocument = async (user) => {
+            const userRef = doc(db, "users", user.uid);
+            const userSnap = await getDoc(userRef);
+            if (!userSnap.exists()) {
+                const currentMonthKey = "2026_Janvier";
+                await setDoc(userRef, { 
+                    [currentMonthKey]: { 
+                        budget_courses: [{ amount: 0, category: "Budget Courses", recurring: true }], 
+                        charges: [], depenses: [], 
+                        epargne: [{ amount: 0, category: "À épargner" }, { amount: 0, category: "Retiré" }], 
+                        revenus: [] 
+                    } 
+                });
+            }
+        };
+
+        window.addEventListener('DOMContentLoaded', () => {
+            const savedEmail = localStorage.getItem('rememberedEmail');
+            if (savedEmail) { 
+                document.getElementById('email').value = savedEmail; 
+                document.getElementById('remember').checked = true; 
+            }
+        });
+
+        window.loginWithGoogle = async () => {
+            const provider = new GoogleAuthProvider();
+            const errorMsg = document.getElementById('error-msg');
+            try {
+                await setPersistence(auth, browserLocalPersistence);
+                const result = await signInWithPopup(auth, provider);
+                await initializeUserDocument(result.user);
+                window.location.href = "index.html";
+            } catch (err) { 
+                errorMsg.innerText = "Erreur Google : " + err.message; 
+            }
+        };
+
+        window.toggleAuth = () => {
+            const title = document.getElementById('auth-title');
+            const btn = document.getElementById('auth-btn');
+            const link = document.getElementById('auth-link');
+            const errorMsg = document.getElementById('error-msg');
+            errorMsg.innerText = "";
+            if (btn.dataset.mode === 'login') {
+                title.innerText = "Créer un compte"; btn.innerText = "S'inscrire"; btn.dataset.mode = 'signup'; link.innerText = "Déjà un compte ? Se connecter";
+            } else {
+                title.innerText = "Bienvenue"; btn.innerText = "Se connecter"; btn.dataset.mode = 'login'; link.innerText = "Pas de compte ? Créer une session";
+            }
+        };
+
+        window.handleAuth = async (e) => {
+            e.preventDefault();
+            const mode = document.getElementById('auth-btn').dataset.mode;
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const rememberMe = document.getElementById('remember').checked;
+            const btn = document.getElementById('auth-btn');
+            const errorMsg = document.getElementById('error-msg');
+
+            btn.disabled = true; btn.innerText = "Chargement...";
+            errorMsg.innerText = "";
+
+            try {
+                const persistenceType = (rememberMe || window.navigator.standalone) ? browserLocalPersistence : browserSessionPersistence;
+                await setPersistence(auth, persistenceType);
+                
+                if (rememberMe) localStorage.setItem('rememberedEmail', email); 
+                else localStorage.removeItem('rememberedEmail');
+
+                const userCredential = mode === 'login' 
+                    ? await signInWithEmailAndPassword(auth, email, password) 
+                    : await createUserWithEmailAndPassword(auth, email, password);
+                
+                await initializeUserDocument(userCredential.user);
+                window.location.href = "index.html";
+            } catch (err) {
+                btn.disabled = false; 
+                btn.innerText = mode === 'login' ? "Se connecter" : "S'inscrire";
+                errorMsg.innerText = "Erreur : " + err.message;
+            }
+        };
+    </script>
+
+    <style>
+        :root {
+            --accent-gradient: linear-gradient(135deg, #4776E6 0%, #8E54E9 100%);
+            --bg: #0A0A0B;
+            --glass: rgba(255, 255, 255, 0.06);
+            --glass-border: rgba(255, 255, 255, 0.1);
+            --text: #FFFFFF;
+            --text-dim: #A1A1AA;
+            --blue: #4776E6;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: -apple-system, sans-serif; }
+
+        body { 
+            background: var(--bg); 
+            color: var(--text); 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            min-height: 100vh;
+            background-image: 
+                radial-gradient(circle at 0% 0%, rgba(71, 118, 230, 0.15) 0%, transparent 45%),
+                radial-gradient(circle at 100% 100%, rgba(142, 84, 233, 0.15) 0%, transparent 45%);
+        }
+
+        .login-card { 
+            background: var(--glass); 
+            padding: 40px 30px; 
+            border-radius: 40px; 
+            border: 1px solid var(--glass-border);
+            backdrop-filter: blur(20px);
+            width: 90%; 
+            max-width: 400px; 
+            text-align: center;
+            box-shadow: 0 40px 80px rgba(0,0,0,0.3);
+        }
+        
+        .logo-img { 
+            width: 85px; height: 85px; margin-bottom: 25px; 
+            border-radius: 22px; object-fit: cover; 
+            box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+        }
+
+        h1 { font-size: 28px; font-weight: 800; letter-spacing: -1px; margin-bottom: 30px; }
+
+        .input-group { margin-bottom: 20px; text-align: left; }
+
+        input[type="email"], input[type="password"] { 
+            width: 100%; padding: 18px; margin-bottom: 12px; 
+            border: 1px solid var(--glass-border); 
+            border-radius: 18px; font-size: 16px; 
+            background: rgba(255,255,255,0.03); 
+            color: var(--text); 
+            outline: none;
+            transition: 0.3s;
+        }
+
+        input:focus { background: rgba(255,255,255,0.07); border-color: var(--blue); }
+
+        button#auth-btn { 
+            width: 100%; padding: 18px; 
+            background: var(--accent-gradient); 
+            color: white; border: none; 
+            border-radius: 20px; font-size: 17px; 
+            font-weight: 700; cursor: pointer; 
+            margin-top: 10px;
+            box-shadow: 0 10px 20px rgba(71, 118, 230, 0.3);
+        }
+
+        .btn-google { 
+            width: 100%; padding: 16px;
+            background: rgba(255,255,255,0.05); 
+            color: var(--text); 
+            border: 1px solid var(--glass-border); 
+            border-radius: 20px;
+            margin-top: 15px; 
+            display: flex; align-items: center; justify-content: center; 
+            gap: 12px; font-weight: 600; font-size: 15px;
+            cursor: pointer;
+        }
+
+        .toggle-link { margin-top: 30px; display: block; color: var(--text-dim); font-size: 14px; cursor: pointer; text-decoration: none; font-weight: 500; }
+        .toggle-link:hover { color: var(--text); }
+
+        #error-msg { color: #ff453a; font-size: 13px; margin-top: 15px; font-weight: 500; }
+
+        .remember-container { 
+            display: flex; align-items: center; gap: 10px; 
+            margin: 5px 0 20px 5px; font-size: 14px; 
+            color: var(--text-dim); cursor: pointer;
+        }
+
+        input[type="checkbox"] { accent-color: var(--blue); width: 18px; height: 18px; }
+    </style>
+</head>
+<body>
+    <div class="login-card">
+        <img src="logo.png" alt="Logo" class="logo-img">
+        
+        <h1 id="auth-title">Bienvenue</h1>
+        
+        <form onsubmit="handleAuth(event)">
+            <input type="email" id="email" placeholder="Adresse email" required autocomplete="email">
+            <input type="password" id="password" placeholder="Mot de passe" required autocomplete="current-password">
+            
+            <label class="remember-container">
+                <input type="checkbox" id="remember"> Se souvenir de moi
+            </label>
+            
+            <button type="submit" id="auth-btn" data-mode="login">Se connecter</button>
+        </form>
+
+        <button class="btn-google" onclick="loginWithGoogle()">
+            <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" width="20" alt="Google"> 
+            Continuer avec Google
+        </button>
+        
+        <a class="toggle-link" id="auth-link" onclick="toggleAuth()">Pas de compte ? Créer une session</a>
+        
+        <div id="error-msg"></div>
+    </div>
+</body>
+</html>

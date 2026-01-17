@@ -43,7 +43,7 @@
             overflow-x: hidden;
         }
 
-        body.modal-open { overflow: hidden; position: fixed; width: 100%; }
+        body.modal-open { overflow: hidden; }
 
         header { 
             padding: 60px 24px 20px; 
@@ -80,6 +80,7 @@
             border-radius: 15px; cursor: pointer; color: var(--text); font-size: 18px;
         }
 
+        /* Cartes Animées */
         .animated-card {
             border-radius: 32px;
             padding: 24px;
@@ -108,6 +109,7 @@
 
         .bento-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 30px; }
 
+        /* Sections */
         .section-card { 
             background: var(--glass); 
             padding: 24px; border-radius: 28px; 
@@ -127,15 +129,16 @@
         .editable { 
             border: none; background: transparent; color: var(--text); 
             font-size: 16px; font-weight: 600; width: 100%; outline: none; 
-            padding: 8px 5px; border-radius: 8px;
+            padding: 5px; border-radius: 8px;
         }
-        .editable:focus { background: rgba(255,255,255,0.1); }
+        .editable:focus { background: rgba(255,255,255,0.05); }
         
         .amount-input { font-weight: 800; text-align: right; width: 100px; color: var(--accent); }
 
         .btn-action { border: none; background: none; font-size: 18px; cursor: pointer; opacity: 0.2; color: var(--text); transition: 0.2s; }
         .btn-action.active { opacity: 1; color: var(--accent); font-weight: bold; }
         .btn-delete { color: var(--danger); opacity: 0.3; }
+        .btn-delete:hover { opacity: 1; }
 
         .add-btn { 
             width: 100%; padding: 15px; margin-top: 15px; border-radius: 18px; 
@@ -152,15 +155,13 @@
         .modal-content { 
             background: #121214; width: 100%; max-width: 500px; 
             border-radius: 40px 40px 0 0; padding: 40px 24px; 
-            max-height: 90vh; overflow-y: auto; 
+            max-height: 85vh; overflow-y: auto; 
             border-top: 1px solid var(--glass-border); 
-            animation: slideUp 0.35s cubic-bezier(0.16, 1, 0.3, 1); 
-            scroll-behavior: smooth;
-            -webkit-overflow-scrolling: touch;
+            animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1); 
         }
         @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
 
-        .keyboard-spacer { height: 0px; transition: height 0.3s ease; }
+        .keyboard-spacer { height: 0px; transition: height 0.3s; }
 
         /* Navigation Menu */
         .tab-bar-container { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); width: 85%; max-width: 400px; z-index: 1000; }
@@ -169,7 +170,7 @@
             backdrop-filter: blur(25px); border-radius: 30px; display: flex; 
             justify-content: space-around; padding: 12px; box-shadow: 0 20px 50px rgba(0,0,0,0.5); 
         }
-        .tab-item { color: var(--text-dim); text-align: center; flex: 1; font-size: 11px; font-weight: 700; cursor: pointer; }
+        .tab-item { color: var(--text-dim); text-align: center; flex: 1; font-size: 11px; font-weight: 700; cursor: pointer; transition: 0.3s; }
         .tab-icon { font-size: 24px; margin-bottom: 2px; }
         .tab-item.orange-txt { color: #FF9F0A; }
         .tab-item.blue-txt { color: #4776E6; }
@@ -205,8 +206,8 @@
                 <div id="courses-restant" class="mini-value">0.00 €</div>
             </div>
             <div class="animated-card card-green">
-                <div class="balance-label">Épargne 💰</div>
-                <div id="total-savings-box" class="mini-value">0 €</div>
+                <div class="balance-label">Épargne 💎</div>
+                <div id="total-savings-box" class="mini-value">0.00 €</div>
             </div>
         </div>
 
@@ -251,10 +252,10 @@
     <div id="spendingModal" class="modal" onclick="closeModal('spendingModal')">
         <div class="modal-content" onclick="event.stopPropagation()">
             <div class="section-title">
-                <h2 style="font-size: 24px;">Dépenses</h2>
+                <h2 style="font-size: 24px;">Dépenses quotidiennes</h2>
                 <span id="modal-total-depenses" style="color:var(--danger); font-weight: 800;">0.00 €</span>
             </div>
-            <div id="list-depenses"></div>
+            <div id="list-depenses" style="margin-bottom: 20px;"></div>
             <button class="add-btn" style="background:var(--accent-gradient); border:none; color:white; padding:20px; font-size:16px;" onclick="addItem('depenses')">Noter un achat</button>
             <div class="keyboard-spacer"></div>
         </div>
@@ -266,13 +267,14 @@
                 <h2 style="font-size: 24px;">Tickets Courses</h2>
                 <span id="modal-total-tickets" style="color:var(--danger); font-weight: 800;">0.00 €</span>
             </div>
-            <div id="list-tickets_courses"></div>
+            <div id="list-tickets_courses" style="margin-bottom: 20px;"></div>
             <button class="add-btn" style="background:var(--orange-gradient); border:none; color:white; padding:20px; font-size:16px;" onclick="addItem('tickets_courses')">Ajouter un ticket</button>
             <div class="keyboard-spacer"></div>
         </div>
     </div>
 
     <script>
+        // CONFIGURATION FIREBASE
         const firebaseConfig = {
             apiKey: "AIzaSyCyt94XDHjrK87gKUwaST01c7CBu_lgCB4",
             authDomain: "budget-mensuel-52aa9.firebaseapp.com",
@@ -290,15 +292,22 @@
         let currentUser = null;
         let userData = {};
 
+        // AUTHENTIFICATION
         firebase.auth().onAuthStateChanged(user => {
             if (user) {
                 currentUser = user;
                 document.getElementById('user-email').innerText = user.email.split('@')[0];
                 const avatar = document.getElementById('user-avatar');
-                if (user.photoURL) avatar.style.backgroundImage = `url(${user.photoURL})`;
-                else avatar.innerText = user.email[0].toUpperCase();
+                if (user.photoURL) {
+                    avatar.style.backgroundImage = `url(${user.photoURL})`;
+                    avatar.innerText = "";
+                } else {
+                    avatar.innerText = user.email[0].toUpperCase();
+                }
                 loadData();
-            } else { window.location.href = "login.html"; }
+            } else { 
+                window.location.href = "login.html"; 
+            }
         });
 
         async function loadData() {
@@ -337,44 +346,68 @@
 
             ['revenus', 'charges', 'epargne', 'depenses', 'budget_courses', 'tickets_courses'].forEach(type => {
                 const list = userData[key][type] || [];
-                if (type === 'epargne') totals[type] = (parseFloat(list[0]?.amount) || 0) - (parseFloat(list[1]?.amount) || 0);
-                else totals[type] = list.reduce((s, i) => s + (parseFloat(i.amount) || 0), 0);
+                if (type === 'epargne') {
+                    totals[type] = (parseFloat(list[0]?.amount) || 0) - (parseFloat(list[1]?.amount) || 0);
+                } else {
+                    totals[type] = list.reduce((s, i) => s + (parseFloat(i.amount) || 0), 0);
+                }
                 
-                if (document.getElementById(`sub-${type}`)) document.getElementById(`sub-${type}`).innerText = `${totals[type].toFixed(2)}€`;
+                if (document.getElementById(`sub-${type}`)) {
+                    document.getElementById(`sub-${type}`).innerText = `${totals[type].toFixed(2)} €`;
+                }
 
-                const element = document.getElementById(type === 'depenses' ? 'list-depenses' : (type === 'tickets_courses' ? 'list-tickets_courses' : `list-${type}`));
+                let targetId = type === 'depenses' ? 'list-depenses' : (type === 'tickets_courses' ? 'list-tickets_courses' : `list-${type}`);
+                const element = document.getElementById(targetId);
+                
                 if (element) {
                     element.innerHTML = list.map((item, idx) => `
                         <div class="item-row">
                             <div style="display:flex; align-items:center; gap:8px; flex:1;">
                                 ${(type !== 'epargne' && type !== 'depenses' && type !== 'tickets_courses' && type !== 'budget_courses') ? 
-                                `<button class="btn-action ${item.recurring ? 'active' : ''}" onclick="toggleRecurring('${type}', ${idx})">↻</button>` : ''}
-                                <input class="editable" value="${item.category}" onfocus="handleFocus(this)" onchange="updateItem('${type}', ${idx}, 'category', this.value)" onblur="handleBlur(this)">
+                                `<button class="btn-action ${item.recurring ? 'active' : ''}" onclick="toggleRecurring('${type}', ${idx})">↻</button>` : 
+                                ''}
+                                <input class="editable" value="${item.category}" 
+                                    onfocus="handleFocus(this)" 
+                                    onchange="updateItem('${type}', ${idx}, 'category', this.value)"
+                                    onblur="handleBlur(this)">
                             </div>
-                            <input class="editable amount-input" type="number" step="0.01" inputmode="decimal" value="${item.amount}" onfocus="handleFocus(this)" onchange="updateItem('${type}', ${idx}, 'amount', this.value)" onblur="handleBlur(this)">
-                            ${type !== 'epargne' && (type !== 'budget_courses' || idx !== 0) ? `<button class="btn-action btn-delete" onclick="deleteItem('${type}', ${idx})">✕</button>` : '<div style="width:25px"></div>'}
+                            <input class="editable amount-input" type="number" step="0.01" inputmode="decimal" value="${item.amount}" 
+                                onfocus="handleFocus(this)" 
+                                style="color: ${(type === 'epargne' && idx === 1) || type === 'depenses' || type === 'tickets_courses' ? 'var(--danger)' : 'var(--accent)'}" 
+                                onchange="updateItem('${type}', ${idx}, 'amount', this.value)"
+                                onblur="handleBlur(this)">
+                            ${type !== 'epargne' && (type !== 'budget_courses' || idx !== 0) ? 
+                            `<button class="btn-action btn-delete" onclick="deleteItem('${type}', ${idx})">✕</button>` : 
+                            '<div style="width:25px"></div>'}
                         </div>`).join('');
                 }
             });
 
-            document.getElementById('restant').innerText = `${(totals.revenus - totals.charges - totals.epargne - totals.depenses - totals.budget_courses).toFixed(2)} €`;
+            // Mise à jour des cartes
+            const netRestant = totals.revenus - totals.charges - totals.epargne - totals.depenses - totals.budget_courses;
+            document.getElementById('restant').innerText = `${netRestant.toFixed(2)} €`;
             document.getElementById('courses-restant').innerText = `${(totals.budget_courses - totals.tickets_courses).toFixed(2)} €`;
             document.getElementById('modal-total-depenses').innerText = `${totals.depenses.toFixed(2)} €`;
             document.getElementById('modal-total-tickets').innerText = `${totals.tickets_courses.toFixed(2)} €`;
 
+            // Calcul épargne cumulée
             let cumule = 0;
             Object.keys(userData).forEach(k => {
-                if (userData[k]?.epargne) cumule += ((parseFloat(userData[k].epargne[0].amount) || 0) - (parseFloat(userData[k].epargne[1].amount) || 0));
+                if (userData[k]?.epargne) {
+                    cumule += ((parseFloat(userData[k].epargne[0].amount) || 0) - (parseFloat(userData[k].epargne[1].amount) || 0));
+                }
             });
-            // CASE EPARGNE VERTE : Pas de décimales (Math.round)
-            document.getElementById('total-savings-box').innerText = `${Math.round(cumule)} €`;
+            document.getElementById('total-savings-box').innerText = `${cumule.toFixed(2)} €`;
         }
 
+        // LOGIQUE MODIFICATION
         function updateItem(type, idx, field, val) {
             const key = `${currentYear}_${months[currentMonthIdx]}`;
             if(!userData[key]?.[type][idx]) return;
             userData[key][type][idx][field] = field === 'amount' ? parseFloat(val) || 0 : val;
-            if (type === 'budget_courses' || userData[key][type][idx].recurring) propagateChange(type, userData[key][type][idx]);
+            if (type === 'budget_courses' || userData[key][type][idx].recurring) {
+                propagateChange(type, userData[key][type][idx]);
+            }
             save();
         }
 
@@ -392,8 +425,9 @@
                 m++; if (m > 11) { m = 0; y++; }
                 const k = `${y}_${months[m]}`;
                 if (!userData[k]) initMonthData(y, m);
-                if (type === 'budget_courses') { if (userData[k][type]?.[0]) userData[k][type][0].amount = item.amount; }
-                else {
+                if (type === 'budget_courses') {
+                    if (userData[k][type]?.[0]) userData[k][type][0].amount = item.amount;
+                } else {
                     const ex = userData[k][type].findIndex(it => it.category === item.category);
                     if (ex > -1) userData[k][type][ex] = { ...item };
                     else userData[k][type].push({ ...item });
@@ -406,19 +440,24 @@
             for (let i = 0; i < 12; i++) {
                 m++; if (m > 11) { m = 0; y++; }
                 const k = `${y}_${months[m]}`;
-                if (userData[k]?.[type]) userData[k][type] = userData[k][type].filter(it => it.category !== category);
+                if (userData[k]?.[type]) {
+                    userData[k][type] = userData[k][type].filter(it => it.category !== category);
+                }
             }
         }
 
         function addItem(type) {
             const key = `${currentYear}_${months[currentMonthIdx]}`;
             if (!userData[key][type]) userData[key][type] = [];
-            userData[key][type].push({ category: (type === 'tickets_courses' ? "Courses" : "Nouveau"), amount: 0, recurring: false });
+            userData[key][type].push({ 
+                category: (type === 'tickets_courses' ? "Courses" : "Nouveau"), 
+                amount: 0, recurring: false 
+            });
             save();
             setTimeout(() => {
-                const modal = document.querySelector('.modal[style*="flex"] .modal-content');
-                if(modal) modal.scrollTo({ top: modal.scrollHeight, behavior: 'smooth' });
-            }, 100);
+                const openModalEl = document.querySelector('.modal[style*="flex"] .modal-content');
+                if(openModalEl) openModalEl.scrollTop = openModalEl.scrollHeight;
+            }, 200);
         }
 
         function deleteItem(type, idx) {
@@ -436,25 +475,21 @@
             render();
         }
 
-        async function save() { render(); if (currentUser) await db.collection("users").doc(currentUser.uid).set(userData); }
+        async function save() { 
+            render(); 
+            if (currentUser) {
+                await db.collection("users").doc(currentUser.uid).set(userData); 
+            }
+        }
 
-        // GESTION CLAVIER IPHONE
+        // UI HELPERS
         function handleFocus(el) {
+            el.select();
             const modalContent = el.closest('.modal-content');
             if (modalContent) {
                 const spacer = modalContent.querySelector('.keyboard-spacer');
-                if (spacer) spacer.style.height = "320px"; // Simule la place du clavier
-                
-                // Petit délai pour laisser le clavier sortir sur iOS
-                setTimeout(() => {
-                    const elementRect = el.getBoundingClientRect();
-                    const absoluteElementTop = elementRect.top + modalContent.scrollTop;
-                    const middleOfModal = modalContent.clientHeight / 4; 
-                    modalContent.scrollTo({
-                        top: absoluteElementTop - modalContent.getBoundingClientRect().top - middleOfModal,
-                        behavior: 'smooth'
-                    });
-                }, 300);
+                if (spacer) spacer.style.height = "300px";
+                setTimeout(() => el.scrollIntoView({ behavior: 'smooth', block: 'center' }), 400);
             }
         }
 
@@ -475,6 +510,12 @@
             document.getElementById(id).style.display = 'none'; 
             document.body.classList.remove('modal-open');
         }
+
+        window.onclick = function(event) {
+            if (event.target.classList.contains('modal')) {
+                closeModal('spendingModal'); closeModal('coursesModal');
+            }
+        };
     </script>
 </body>
 </html>

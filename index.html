@@ -129,6 +129,7 @@
             padding: 5px; border-radius: 8px;
         }
         .editable:focus { background: rgba(255,255,255,0.05); }
+        .editable[readonly] { cursor: default; }
         
         .amount-input { font-weight: 800; text-align: right; width: 100px; color: var(--accent); }
 
@@ -355,13 +356,18 @@
                 const element = document.getElementById(targetId);
                 
                 if (element) {
-                    element.innerHTML = list.map((item, idx) => `
+                    element.innerHTML = list.map((item, idx) => {
+                        // --- VERROUILLAGE DES NOMS SPECIFIQUES ---
+                        const isLockedName = (type === 'budget_courses' && idx === 0) || (type === 'epargne');
+                        
+                        return `
                         <div class="item-row" data-index="${idx}">
                             <div style="display:flex; align-items:center; gap:8px; flex:1;">
                                 ${(type !== 'epargne' && type !== 'depenses' && type !== 'tickets_courses' && type !== 'budget_courses') ? 
                                 `<button class="btn-action ${item.recurring ? 'active' : ''}" onclick="toggleRecurring('${type}', ${idx})">↻</button>` : 
                                 ''}
                                 <input class="editable" value="${item.category}" 
+                                    ${isLockedName ? 'readonly' : ''}
                                     onfocus="handleFocus(this)" 
                                     onchange="updateItem('${type}', ${idx}, 'category', this.value)"
                                     onblur="handleBlur(this)">
@@ -374,7 +380,8 @@
                             ${type !== 'epargne' && (type !== 'budget_courses' || idx !== 0) ? 
                             `<button class="btn-action btn-delete" onclick="deleteItem('${type}', ${idx})">✕</button>` : 
                             '<div style="width:25px"></div>'}
-                        </div>`).join('');
+                        </div>`;
+                    }).join('');
                 }
             });
 
@@ -384,16 +391,13 @@
             document.getElementById('modal-total-depenses').innerText = `${totals.depenses.toFixed(2)} €`;
             document.getElementById('modal-total-tickets').innerText = `${totals.tickets_courses.toFixed(2)} €`;
 
-            // CORRECTIF CUMUL EPARGNE : On s'arrête au mois en cours de visualisation
             let cumule = 0;
             const years = Object.keys(userData).map(k => parseInt(k.split('_')[0]));
             const minYear = years.length ? Math.min(...years) : currentYear;
 
             for (let y = minYear; y <= currentYear; y++) {
                 for (let m = 0; m < 12; m++) {
-                    // On sort si on dépasse l'année et le mois actuellement affichés
                     if (y > currentYear || (y === currentYear && m > currentMonthIdx)) break;
-                    
                     const k = `${y}_${months[m]}`;
                     if (userData[k]?.epargne) {
                         cumule += ((parseFloat(userData[k].epargne[0].amount) || 0) - (parseFloat(userData[k].epargne[1].amount) || 0));

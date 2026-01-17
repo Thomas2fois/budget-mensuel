@@ -384,12 +384,22 @@
             document.getElementById('modal-total-depenses').innerText = `${totals.depenses.toFixed(2)} €`;
             document.getElementById('modal-total-tickets').innerText = `${totals.tickets_courses.toFixed(2)} €`;
 
+            // CORRECTIF CUMUL EPARGNE : On s'arrête au mois en cours de visualisation
             let cumule = 0;
-            Object.keys(userData).forEach(k => {
-                if (userData[k]?.epargne) {
-                    cumule += ((parseFloat(userData[k].epargne[0].amount) || 0) - (parseFloat(userData[k].epargne[1].amount) || 0));
+            const years = Object.keys(userData).map(k => parseInt(k.split('_')[0]));
+            const minYear = years.length ? Math.min(...years) : currentYear;
+
+            for (let y = minYear; y <= currentYear; y++) {
+                for (let m = 0; m < 12; m++) {
+                    // On sort si on dépasse l'année et le mois actuellement affichés
+                    if (y > currentYear || (y === currentYear && m > currentMonthIdx)) break;
+                    
+                    const k = `${y}_${months[m]}`;
+                    if (userData[k]?.epargne) {
+                        cumule += ((parseFloat(userData[k].epargne[0].amount) || 0) - (parseFloat(userData[k].epargne[1].amount) || 0));
+                    }
                 }
-            });
+            }
             document.getElementById('total-savings-box').innerText = `${Math.round(cumule)} €`;
         }
 
@@ -474,7 +484,6 @@
             }
         }
 
-        // --- LOGIQUE DE DEPLACEMENT SMART ---
         function handleFocus(el) {
             el.select();
             const row = el.closest('.item-row');
@@ -486,17 +495,13 @@
             if (spacer) spacer.style.height = "450px"; 
 
             setTimeout(() => {
-                // Si on édite une ligne au-delà de la 3ème (index 3 = ligne 4)
                 if (idx >= 3) {
-                    // Calculer la position de la 4ème ligne (index 3) pour s'y aligner
                     const targetRow = modalContent.querySelector('.item-row[data-index="3"]');
                     if (targetRow) {
-                        // On aligne le haut de la ligne éditée avec le haut de la ligne 4
                         const scrollPos = row.offsetTop - targetRow.offsetTop;
                         modalContent.scrollTo({ top: scrollPos + 20, behavior: 'smooth' });
                     }
                 } else {
-                    // Pour les 3 premières lignes, on reste en haut
                     modalContent.scrollTo({ top: 0, behavior: 'smooth' });
                 }
             }, 300);

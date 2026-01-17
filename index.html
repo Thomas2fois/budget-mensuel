@@ -1,0 +1,521 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Mon Budget | 2026 Premium</title>
+
+    <link rel="apple-touch-icon" href="logo.png">
+    <link rel="icon" type="image/png" href="logo.png">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
+
+    <style>
+        :root {
+            --accent: #4776E6;
+            --accent-gradient: linear-gradient(135deg, #4776E6 0%, #8E54E9 100%);
+            --orange-gradient: linear-gradient(135deg, #FF9F0A 0%, #FF375F 100%);
+            --green-gradient: linear-gradient(135deg, #32D74B 0%, #28CD41 100%);
+            --bg: #0A0A0B;
+            --glass: rgba(255, 255, 255, 0.06);
+            --glass-border: rgba(255, 255, 255, 0.1);
+            --text: #FFFFFF;
+            --text-dim: #A1A1AA;
+            --success: #32D74B;
+            --danger: #FF453A;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif; }
+        
+        body { 
+            background: var(--bg); 
+            color: var(--text); 
+            min-height: 100vh;
+            padding-bottom: 120px;
+            background-image: 
+                radial-gradient(circle at 0% 0%, rgba(71, 118, 230, 0.12) 0%, transparent 40%),
+                radial-gradient(circle at 100% 100%, rgba(142, 84, 233, 0.12) 0%, transparent 40%);
+            -webkit-font-smoothing: antialiased;
+            overflow-x: hidden;
+        }
+
+        body.modal-open { overflow: hidden; }
+
+        header { 
+            padding: 60px 24px 20px; 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center;
+        }
+
+        .profile-pill {
+            background: var(--glass);
+            border: 1px solid var(--glass-border);
+            padding: 6px 16px 6px 6px;
+            border-radius: 40px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            backdrop-filter: blur(10px);
+        }
+
+        .avatar { 
+            width: 34px; height: 34px; border-radius: 50%; 
+            background: var(--accent-gradient); color: white; 
+            display: flex; align-items: center; justify-content: center; 
+            font-weight: 800; font-size: 13px;
+            background-size: cover; background-position: center;
+        }
+
+        main { max-width: 1200px; margin: 0 auto; padding: 0 20px; }
+        
+        .nav-bar { display: flex; align-items: center; justify-content: space-between; margin: 10px 0 25px; }
+        .nav-bar h1 { font-size: 32px; font-weight: 800; letter-spacing: -1.5px; }
+        .nav-bar button { 
+            background: var(--glass); border: 1px solid var(--glass-border); width: 44px; height: 44px; 
+            border-radius: 15px; cursor: pointer; color: var(--text); font-size: 18px;
+        }
+
+        /* Cartes Animées */
+        .animated-card {
+            border-radius: 32px;
+            padding: 24px;
+            position: relative;
+            overflow: hidden;
+            cursor: pointer;
+            transition: transform 0.2s ease;
+        }
+        .animated-card:active { transform: scale(0.98); }
+
+        .animated-card::before {
+            content: ""; position: absolute; top: -50%; left: -50%; width: 200%; height: 200%;
+            background: radial-gradient(circle, rgba(255,255,255,0.15) 0%, transparent 70%);
+            animation: rotate 12s linear infinite;
+        }
+
+        @keyframes rotate { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+
+        .card-blue { background: var(--accent-gradient); box-shadow: 0 20px 40px rgba(71, 118, 230, 0.2); }
+        .card-orange { background: var(--orange-gradient); box-shadow: 0 20px 40px rgba(255, 159, 10, 0.2); }
+        .card-green { background: var(--green-gradient); box-shadow: 0 20px 40px rgba(50, 215, 75, 0.2); cursor: default; }
+
+        .balance-label { font-size: 13px; font-weight: 700; opacity: 0.9; text-transform: uppercase; letter-spacing: 0.5px; position: relative; z-index: 1; }
+        .balance-value { font-size: 40px; font-weight: 900; letter-spacing: -1.5px; margin-top: 5px; position: relative; z-index: 1; }
+        .mini-value { font-size: 22px; font-weight: 800; position: relative; z-index: 1; }
+
+        .bento-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 30px; }
+
+        /* Sections */
+        .section-card { 
+            background: var(--glass); 
+            padding: 24px; border-radius: 28px; 
+            border: 1px solid var(--glass-border);
+            margin-bottom: 20px;
+        }
+        .section-title { 
+            display: flex; justify-content: space-between; align-items: center;
+            font-size: 18px; font-weight: 800; margin-bottom: 15px;
+        }
+        .total-mini { font-size: 14px; color: var(--accent); font-weight: 800; }
+
+        .item-row { 
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 14px 0; border-bottom: 1px solid var(--glass-border); gap: 10px;
+        }
+        .editable { 
+            border: none; background: transparent; color: var(--text); 
+            font-size: 16px; font-weight: 600; width: 100%; outline: none; 
+            padding: 5px; border-radius: 8px;
+        }
+        .editable:focus { background: rgba(255,255,255,0.05); }
+        
+        .amount-input { font-weight: 800; text-align: right; width: 100px; color: var(--accent); }
+
+        .btn-action { border: none; background: none; font-size: 18px; cursor: pointer; opacity: 0.2; color: var(--text); transition: 0.2s; }
+        .btn-action.active { opacity: 1; color: var(--accent); font-weight: bold; }
+        .btn-delete { color: var(--danger); opacity: 0.3; }
+        .btn-delete:hover { opacity: 1; }
+
+        .add-btn { 
+            width: 100%; padding: 15px; margin-top: 15px; border-radius: 18px; 
+            background: rgba(255,255,255,0.05); color: var(--text); 
+            border: 1px dashed var(--glass-border); font-weight: 700; cursor: pointer; 
+        }
+
+        /* Modal */
+        .modal { 
+            display: none; position: fixed; inset: 0; z-index: 2000; 
+            background: rgba(0,0,0,0.85); backdrop-filter: blur(15px); 
+            align-items: flex-end; justify-content: center; 
+        }
+        .modal-content { 
+            background: #121214; width: 100%; max-width: 500px; 
+            border-radius: 40px 40px 0 0; padding: 40px 24px; 
+            max-height: 85vh; overflow-y: auto; 
+            border-top: 1px solid var(--glass-border); 
+            animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1); 
+        }
+        @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+
+        .keyboard-spacer { height: 0px; transition: height 0.3s; }
+
+        /* Navigation Menu */
+        .tab-bar-container { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); width: 85%; max-width: 400px; z-index: 1000; }
+        .tab-bar { 
+            background: rgba(20, 20, 22, 0.85); border: 1px solid var(--glass-border); 
+            backdrop-filter: blur(25px); border-radius: 30px; display: flex; 
+            justify-content: space-around; padding: 12px; box-shadow: 0 20px 50px rgba(0,0,0,0.5); 
+        }
+        .tab-item { color: var(--text-dim); text-align: center; flex: 1; font-size: 11px; font-weight: 700; cursor: pointer; transition: 0.3s; }
+        .tab-icon { font-size: 24px; margin-bottom: 2px; }
+        .tab-item.orange-txt { color: #FF9F0A; }
+        .tab-item.blue-txt { color: #4776E6; }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="profile-pill">
+            <div id="user-avatar" class="avatar">?</div>
+            <span id="user-email" style="font-size: 13px; font-weight: 700;">Chargement...</span>
+        </div>
+        <button onclick="firebase.auth().signOut()" style="background:var(--glass); border:1px solid var(--glass-border); padding: 8px 15px; border-radius:15px; color:var(--danger); font-size:10px; font-weight:800; letter-spacing: 0.5px;">QUITTER</button>
+    </header>
+
+    <main>
+        <div class="nav-bar">
+            <h1 id="month-label">...</h1>
+            <div style="display:flex; gap:10px;">
+                <button onclick="changeMonth(-1)">❬</button>
+                <button onclick="changeMonth(1)">❭</button>
+            </div>
+        </div>
+
+        <div class="animated-card card-blue" onclick="openModal('spendingModal')" style="margin-bottom: 20px; padding: 35px 24px;">
+            <div class="balance-label">Disponible Global</div>
+            <div id="restant" class="balance-value">0.00 €</div>
+        </div>
+
+        <div class="bento-grid">
+            <div class="animated-card card-orange" onclick="openModal('coursesModal')">
+                <div class="balance-label">Courses 🛒</div>
+                <div id="courses-restant" class="mini-value">0.00 €</div>
+            </div>
+            <div class="animated-card card-green">
+                <div class="balance-label">Épargne 💎</div>
+                <div id="total-savings-box" class="mini-value">0.00 €</div>
+            </div>
+        </div>
+
+        <div class="dashboard-sections">
+            <div class="section-card">
+                <div class="section-title">Revenus 💼 <span id="sub-revenus" class="total-mini">0€</span></div>
+                <div id="list-revenus"></div>
+                <button class="add-btn" onclick="addItem('revenus')">+ Ajouter un revenu</button>
+            </div>
+
+            <div class="section-card">
+                <div class="section-title">Charges fixes 🏠 <span id="sub-charges" class="total-mini">0€</span></div>
+                <div id="list-charges"></div>
+                <button class="add-btn" onclick="addItem('charges')">+ Ajouter une charge</button>
+            </div>
+
+            <div class="section-card">
+                <div class="section-title">Budget Courses 🛒 <span id="sub-budget_courses" class="total-mini">0€</span></div>
+                <div id="list-budget_courses"></div>
+            </div>
+
+            <div class="section-card">
+                <div class="section-title">Épargne du mois 💰 <span id="sub-epargne" class="total-mini">0€</span></div>
+                <div id="list-epargne"></div>
+            </div>
+        </div>
+    </main>
+
+    <div class="tab-bar-container">
+        <nav class="tab-bar">
+            <div class="tab-item blue-txt" onclick="openModal('spendingModal')">
+                <div class="tab-icon">💸</div>
+                <span>DÉPENSES</span>
+            </div>
+            <div class="tab-item orange-txt" onclick="openModal('coursesModal')">
+                <div class="tab-icon">🛒</div>
+                <span>COURSES</span>
+            </div>
+        </nav>
+    </div>
+
+    <div id="spendingModal" class="modal" onclick="closeModal('spendingModal')">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <div class="section-title">
+                <h2 style="font-size: 24px;">Dépenses quotidiennes</h2>
+                <span id="modal-total-depenses" style="color:var(--danger); font-weight: 800;">0.00 €</span>
+            </div>
+            <div id="list-depenses" style="margin-bottom: 20px;"></div>
+            <button class="add-btn" style="background:var(--accent-gradient); border:none; color:white; padding:20px; font-size:16px;" onclick="addItem('depenses')">Noter un achat</button>
+            <div class="keyboard-spacer"></div>
+        </div>
+    </div>
+
+    <div id="coursesModal" class="modal" onclick="closeModal('coursesModal')">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <div class="section-title">
+                <h2 style="font-size: 24px;">Tickets Courses</h2>
+                <span id="modal-total-tickets" style="color:var(--danger); font-weight: 800;">0.00 €</span>
+            </div>
+            <div id="list-tickets_courses" style="margin-bottom: 20px;"></div>
+            <button class="add-btn" style="background:var(--orange-gradient); border:none; color:white; padding:20px; font-size:16px;" onclick="addItem('tickets_courses')">Ajouter un ticket</button>
+            <div class="keyboard-spacer"></div>
+        </div>
+    </div>
+
+    <script>
+        // CONFIGURATION FIREBASE
+        const firebaseConfig = {
+            apiKey: "AIzaSyCyt94XDHjrK87gKUwaST01c7CBu_lgCB4",
+            authDomain: "budget-mensuel-52aa9.firebaseapp.com",
+            projectId: "budget-mensuel-52aa9",
+            storageBucket: "budget-mensuel-52aa9.appspot.com",
+            messagingSenderId: "675021368593",
+            appId: "1:675021368593:web:e64239a03c6cff30afb0b0"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+        const months = ["Janvier", "Février", "Mars", "Avril", "Mai", "Juin", "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"];
+        
+        let currentYear = new Date().getFullYear();
+        let currentMonthIdx = new Date().getMonth();
+        let currentUser = null;
+        let userData = {};
+
+        // AUTHENTIFICATION
+        firebase.auth().onAuthStateChanged(user => {
+            if (user) {
+                currentUser = user;
+                document.getElementById('user-email').innerText = user.email.split('@')[0];
+                const avatar = document.getElementById('user-avatar');
+                if (user.photoURL) {
+                    avatar.style.backgroundImage = `url(${user.photoURL})`;
+                    avatar.innerText = "";
+                } else {
+                    avatar.innerText = user.email[0].toUpperCase();
+                }
+                loadData();
+            } else { 
+                window.location.href = "login.html"; 
+            }
+        });
+
+        async function loadData() {
+            const doc = await db.collection("users").doc(currentUser.uid).get();
+            userData = doc.exists ? doc.data() : {};
+            initMonthData(currentYear, currentMonthIdx);
+            render();
+        }
+
+        function initMonthData(year, monthIdx) {
+            const key = `${year}_${months[monthIdx]}`;
+            if (!userData[key]) {
+                let prevIdx = monthIdx - 1; let prevYear = year;
+                if (prevIdx < 0) { prevIdx = 11; prevYear--; }
+                const prevKey = `${prevYear}_${months[prevIdx]}`;
+                const newData = { 
+                    revenus: [], charges: [], depenses: [], tickets_courses: [], 
+                    budget_courses: [{ category: "Budget Courses", amount: 0, recurring: true }], 
+                    epargne: [{ category: "À épargner", amount: 0 }, { category: "Retiré", amount: 0 }] 
+                };
+                if (userData[prevKey]) {
+                    ['revenus', 'charges', 'budget_courses'].forEach(type => {
+                        newData[type] = (userData[prevKey][type] || []).filter(i => i.recurring).map(i => ({ ...i }));
+                    });
+                }
+                userData[key] = newData;
+            }
+        }
+
+        function render() {
+            const key = `${currentYear}_${months[currentMonthIdx]}`;
+            document.getElementById('month-label').innerText = `${months[currentMonthIdx]} ${currentYear}`;
+            if (!userData[key]) return;
+
+            let totals = { revenus: 0, charges: 0, epargne: 0, depenses: 0, budget_courses: 0, tickets_courses: 0 };
+
+            ['revenus', 'charges', 'epargne', 'depenses', 'budget_courses', 'tickets_courses'].forEach(type => {
+                const list = userData[key][type] || [];
+                if (type === 'epargne') {
+                    totals[type] = (parseFloat(list[0]?.amount) || 0) - (parseFloat(list[1]?.amount) || 0);
+                } else {
+                    totals[type] = list.reduce((s, i) => s + (parseFloat(i.amount) || 0), 0);
+                }
+                
+                if (document.getElementById(`sub-${type}`)) {
+                    document.getElementById(`sub-${type}`).innerText = `${totals[type].toFixed(2)} €`;
+                }
+
+                let targetId = type === 'depenses' ? 'list-depenses' : (type === 'tickets_courses' ? 'list-tickets_courses' : `list-${type}`);
+                const element = document.getElementById(targetId);
+                
+                if (element) {
+                    element.innerHTML = list.map((item, idx) => `
+                        <div class="item-row">
+                            <div style="display:flex; align-items:center; gap:8px; flex:1;">
+                                ${(type !== 'epargne' && type !== 'depenses' && type !== 'tickets_courses' && type !== 'budget_courses') ? 
+                                `<button class="btn-action ${item.recurring ? 'active' : ''}" onclick="toggleRecurring('${type}', ${idx})">↻</button>` : 
+                                ''}
+                                <input class="editable" value="${item.category}" 
+                                    onfocus="handleFocus(this)" 
+                                    onchange="updateItem('${type}', ${idx}, 'category', this.value)"
+                                    onblur="handleBlur(this)">
+                            </div>
+                            <input class="editable amount-input" type="number" step="0.01" inputmode="decimal" value="${item.amount}" 
+                                onfocus="handleFocus(this)" 
+                                style="color: ${(type === 'epargne' && idx === 1) || type === 'depenses' || type === 'tickets_courses' ? 'var(--danger)' : 'var(--accent)'}" 
+                                onchange="updateItem('${type}', ${idx}, 'amount', this.value)"
+                                onblur="handleBlur(this)">
+                            ${type !== 'epargne' && (type !== 'budget_courses' || idx !== 0) ? 
+                            `<button class="btn-action btn-delete" onclick="deleteItem('${type}', ${idx})">✕</button>` : 
+                            '<div style="width:25px"></div>'}
+                        </div>`).join('');
+                }
+            });
+
+            // Mise à jour des cartes
+            const netRestant = totals.revenus - totals.charges - totals.epargne - totals.depenses - totals.budget_courses;
+            document.getElementById('restant').innerText = `${netRestant.toFixed(2)} €`;
+            document.getElementById('courses-restant').innerText = `${(totals.budget_courses - totals.tickets_courses).toFixed(2)} €`;
+            document.getElementById('modal-total-depenses').innerText = `${totals.depenses.toFixed(2)} €`;
+            document.getElementById('modal-total-tickets').innerText = `${totals.tickets_courses.toFixed(2)} €`;
+
+            // Calcul épargne cumulée
+            let cumule = 0;
+            Object.keys(userData).forEach(k => {
+                if (userData[k]?.epargne) {
+                    cumule += ((parseFloat(userData[k].epargne[0].amount) || 0) - (parseFloat(userData[k].epargne[1].amount) || 0));
+                }
+            });
+            document.getElementById('total-savings-box').innerText = `${cumule.toFixed(2)} €`;
+        }
+
+        // LOGIQUE MODIFICATION
+        function updateItem(type, idx, field, val) {
+            const key = `${currentYear}_${months[currentMonthIdx]}`;
+            if(!userData[key]?.[type][idx]) return;
+            userData[key][type][idx][field] = field === 'amount' ? parseFloat(val) || 0 : val;
+            if (type === 'budget_courses' || userData[key][type][idx].recurring) {
+                propagateChange(type, userData[key][type][idx]);
+            }
+            save();
+        }
+
+        function toggleRecurring(type, idx) {
+            const key = `${currentYear}_${months[currentMonthIdx]}`;
+            const item = userData[key][type][idx];
+            item.recurring = !item.recurring;
+            item.recurring ? propagateChange(type, item) : removeFromFuture(type, item.category);
+            save();
+        }
+
+        function propagateChange(type, item) {
+            let m = currentMonthIdx; let y = currentYear;
+            for (let i = 0; i < 12; i++) {
+                m++; if (m > 11) { m = 0; y++; }
+                const k = `${y}_${months[m]}`;
+                if (!userData[k]) initMonthData(y, m);
+                if (type === 'budget_courses') {
+                    if (userData[k][type]?.[0]) userData[k][type][0].amount = item.amount;
+                } else {
+                    const ex = userData[k][type].findIndex(it => it.category === item.category);
+                    if (ex > -1) userData[k][type][ex] = { ...item };
+                    else userData[k][type].push({ ...item });
+                }
+            }
+        }
+
+        function removeFromFuture(type, category) {
+            let m = currentMonthIdx; let y = currentYear;
+            for (let i = 0; i < 12; i++) {
+                m++; if (m > 11) { m = 0; y++; }
+                const k = `${y}_${months[m]}`;
+                if (userData[k]?.[type]) {
+                    userData[k][type] = userData[k][type].filter(it => it.category !== category);
+                }
+            }
+        }
+
+        function addItem(type) {
+            const key = `${currentYear}_${months[currentMonthIdx]}`;
+            if (!userData[key][type]) userData[key][type] = [];
+            userData[key][type].push({ 
+                category: (type === 'tickets_courses' ? "Courses" : "Nouveau"), 
+                amount: 0, recurring: false 
+            });
+            save();
+            setTimeout(() => {
+                const openModalEl = document.querySelector('.modal[style*="flex"] .modal-content');
+                if(openModalEl) openModalEl.scrollTop = openModalEl.scrollHeight;
+            }, 200);
+        }
+
+        function deleteItem(type, idx) {
+            const key = `${currentYear}_${months[currentMonthIdx]}`;
+            if (userData[key][type][idx].recurring) removeFromFuture(type, userData[key][type][idx].category);
+            userData[key][type].splice(idx, 1);
+            save();
+        }
+
+        function changeMonth(dir) {
+            currentMonthIdx += dir;
+            if (currentMonthIdx < 0) { currentMonthIdx = 11; currentYear--; }
+            else if (currentMonthIdx > 11) { currentMonthIdx = 0; currentYear++; }
+            initMonthData(currentYear, currentMonthIdx);
+            render();
+        }
+
+        async function save() { 
+            render(); 
+            if (currentUser) {
+                await db.collection("users").doc(currentUser.uid).set(userData); 
+            }
+        }
+
+        // UI HELPERS
+        function handleFocus(el) {
+            el.select();
+            const modalContent = el.closest('.modal-content');
+            if (modalContent) {
+                const spacer = modalContent.querySelector('.keyboard-spacer');
+                if (spacer) spacer.style.height = "300px";
+                setTimeout(() => el.scrollIntoView({ behavior: 'smooth', block: 'center' }), 400);
+            }
+        }
+
+        function handleBlur(el) {
+            const modalContent = el.closest('.modal-content');
+            if (modalContent) {
+                const spacer = modalContent.querySelector('.keyboard-spacer');
+                if (spacer) spacer.style.height = "0px";
+            }
+        }
+
+        function openModal(id) { 
+            document.getElementById(id).style.display = 'flex';
+            document.body.classList.add('modal-open');
+        }
+
+        function closeModal(id) { 
+            document.getElementById(id).style.display = 'none'; 
+            document.body.classList.remove('modal-open');
+        }
+
+        window.onclick = function(event) {
+            if (event.target.classList.contains('modal')) {
+                closeModal('spendingModal'); closeModal('coursesModal');
+            }
+        };
+    </script>
+</body>
+</html>

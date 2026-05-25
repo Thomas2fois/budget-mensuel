@@ -392,7 +392,9 @@
             document.getElementById('modal-total-tickets').innerText = `${totals.tickets_courses.toFixed(2)} €`;
 
             let cumule = 0;
-            const years = Object.keys(userData).map(k => parseInt(k.split('_')[0]));
+            const years = Object.keys(userData)
+                .filter(k => k.match(/^\d{4}_/))
+                .map(k => parseInt(k.split('_')[0]));
             const minYear = years.length ? Math.min(...years) : currentYear;
 
             for (let y = minYear; y <= currentYear; y++) {

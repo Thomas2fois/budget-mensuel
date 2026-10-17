@@ -116,6 +116,13 @@ main{max-width:1100px;margin:0 auto;padding:0 20px}
 .grab{position:relative}.grab::before{content:"";position:absolute;inset:-14px -70px -10px}
 .row{transition:transform .25s,opacity .25s}
 .donut li.gh{font-weight:800;margin-top:8px}.donut li.it{padding-left:16px;font-weight:500;font-size:13px}.donut li.gh i{width:10px;height:10px;border-radius:4px}
+.grid>div{min-width:0}
+.donut{flex-direction:column;flex-wrap:nowrap;align-items:center;gap:16px}
+.donut ul{width:100%;min-width:0;flex:none}
+.donut li{min-width:0;align-items:flex-start;overflow-wrap:anywhere}
+.donut li em{white-space:nowrap;padding-left:10px;flex:none}
+.donut li i{flex:none;margin-top:5px}
+@media(min-width:620px){.donut{flex-direction:row;align-items:flex-start}.donut svg{position:sticky;top:16px}}
 @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 </style>
 </head>
@@ -389,14 +396,24 @@ function renderStats(){
 
 /* ---------- Navigation & UI ---------- */
 function show(v){view=v;$('v-home').hidden=v!=='home';$('v-stats').hidden=v!=='stats';$('t-home').classList.toggle('on',v==='home');$('t-stats').classList.toggle('on',v==='stats');if(v==='stats')renderStats();scrollTo({top:0,behavior:'smooth'})}
-function openM(id){$(id).classList.add('open');document.body.classList.add('lock');buzz()}
-function closeM(){document.querySelectorAll('.modal.open').forEach(m=>m.classList.remove('open'));document.body.classList.remove('lock')}
+function openM(id){$(id).classList.add('open');document.body.classList.add('lock');buzz();fitKb()}
+function closeM(){document.querySelectorAll('.modal.open').forEach(m=>{m.classList.remove('open');m.style.top=m.style.height=m.style.bottom='';const sh=m.querySelector('.sheet');if(sh)sh.style.maxHeight=''});document.body.classList.remove('lock')}
 document.querySelectorAll('.modal').forEach(m=>m.addEventListener('click',e=>{if(e.target===m)closeM()}));
 addEventListener('keydown',e=>{if(e.key==='Escape')closeM()});
 function buzz(){try{navigator.vibrate&&navigator.vibrate(8)}catch(e){}}
 let tt;function toast(msg,fn){$('tmsg').textContent=msg;const b=$('tund');b.style.display=fn?'':'none';b.onclick=()=>{fn&&fn();$('toast').classList.remove('show')};$('toast').classList.add('show');clearTimeout(tt);tt=setTimeout(()=>$('toast').classList.remove('show'),4000)}
-/* clavier mobile : laisse de la place et centre le champ actif */
-document.addEventListener('focusin',e=>{const sp=e.target.closest?.('.sheet')?.querySelector('.spacer');if(sp&&e.target.tagName==='INPUT'){sp.style.height='40vh';setTimeout(()=>e.target.scrollIntoView({block:'center',behavior:'smooth'}),300)}});
+/* clavier mobile : la fenêtre se cale sur la zone visible (au-dessus du clavier) */
+const vv=window.visualViewport;
+function fitKb(){
+  const m=document.querySelector('.modal.open');if(!m||!vv)return;
+  m.style.top=vv.offsetTop+'px';m.style.height=vv.height+'px';m.style.bottom='auto';
+  const sh=m.querySelector('.sheet');sh.style.maxHeight=Math.max(240,vv.height-14)+'px';
+  const a=document.activeElement;if(a&&sh.contains(a)&&a.tagName==='INPUT')a.scrollIntoView({block:'nearest'});
+}
+if(vv){vv.addEventListener('resize',fitKb);vv.addEventListener('scroll',fitKb)}
+document.addEventListener('focusin',e=>{const sh=e.target.closest?.('.sheet');if(!sh||e.target.tagName!=='INPUT')return;
+  if(!vv){const sp=sh.querySelector('.spacer');if(sp)sp.style.height='40vh'}
+  setTimeout(()=>{fitKb();e.target.scrollIntoView({block:'nearest'})},350)});
 document.addEventListener('focusout',e=>{const sp=e.target.closest?.('.sheet')?.querySelector('.spacer');if(sp)sp.style.height='0'});
 document.querySelectorAll('.quick input').forEach(i=>i.addEventListener('keydown',e=>{if(e.key==='Enter'){const t=i.id.split('-').slice(1).join('-');if(i.id.startsWith('qc'))$('qa-'+t).focus();else quick(t)}}));
 /* swipe gauche/droite = changer de mois */

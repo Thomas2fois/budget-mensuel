@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="apple-touch-icon" href="logo2.png">
+<link rel="icon" type="image/png" href="logo2.png">
+<title>Connexion | Mon Budget</title>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
+import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, setPersistence, browserLocalPersistence, browserSessionPersistence, GoogleAuthProvider, signInWithPopup, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js";
+import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js";
+
+const firebaseConfig = {
+    apiKey: "AIzaSyCyt94XDHjrK87gKUwaST01c7CBu_lgCB4",
+    authDomain: "budget-mensuel-52aa9.firebaseapp.com",
+    projectId: "budget-mensuel-52aa9",
+    storageBucket: "budget-mensuel-52aa9.appspot.com",
+    messagingSenderId: "675021368593",
+    appId: "1:675021368593:web:e64239a03c6cff30afb0b0"
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+
+setPersistence(auth, browserLocalPersistence);
+
+onAuthStateChanged(auth, (user) => {
+    if (user) window.location.href = "index.html";
+});
+
+const initializeUserDocument = async (user) => {
+    const userRef = doc(db, "users", user.uid);
+    const userSnap = await getDoc(userRef);
+    if (!userSnap.exists()) {
+        const currentMonthKey = "2026_Janvier";
+        await setDoc(userRef, {
+            [currentMonthKey]: {
+                budget_courses: [{ amount: 0, category: "Budget Courses", recurring: true }],
+                charges: [], depenses: [],
+                epargne: [{ amount: 0, category: "À épargner" }, { amount: 0, category: "Retiré" }],
+                revenus: []
+            }
+        });
+    }
+};
+
+const MSG = {
+    "auth/invalid-credential": "Email ou mot de passe incorrect.",
+    "auth/wrong-password": "Email ou mot de passe incorrect.",
+    "auth/user-not-found": "Aucun compte avec cet email.",
+    "auth/invalid-email": "Adresse email invalide.",
+    "auth/email-already-in-use": "Un compte existe déjà avec cet email.",
+    "auth/weak-password": "Mot de passe trop court (6 caractères minimum).",
+    "auth/too-many-requests": "Trop de tentatives. Réessaie dans quelques minutes.",
+    "auth/network-request-failed": "Pas de connexion internet.",
+    "auth/popup-closed-by-user": "Connexion Google annulée."
+};
+const niceError = (err) => MSG[err.code] || ("Erreur : " + err.message);
+
+window.addEventListener('DOMContentLoaded', () => {
+    const savedEmail = localStorage.getItem('rememberedEmail');
+    if (savedEmail) {
+        document.getElementById('email').value = savedEmail;
+        document.getElementById('remember').checked = true;
+    }
+});
+
+window.loginWithGoogle = async () => {
+    const provider = new GoogleAuthProvider();
+    const errorMsg = document.getElementById('error-msg');
+    try {
+        await setPersistence(auth, browserLocalPersistence);
+        const result = await signInWithPopup(auth, provider);
+        await initializeUserDocument(result.user);
+        window.location.href = "index.html";
+    } catch (err) {
+        errorMsg.innerText = niceError(err);
+    }
+};
+
+window.toggleAuth = () => {
+    const title = document.getElementById('auth-title');
+    const btn = document.getElementById('auth-btn');
+    const link = document.getElementById('auth-link');
+    const pwd = document.getElementById('password');
+    document.getElementById('error-msg').innerText = "";
+    if (btn.dataset.mode === 'login') {
+        title.innerText = "Créer un compte"; btn.innerText = "S’inscrire"; btn.dataset.mode = 'signup';
+        link.innerText = "Déjà un compte ? Se connecter"; pwd.autocomplete = "new-password";
+    } else {
+        title.innerText = "Bienvenue"; btn.innerText = "Se connecter"; btn.dataset.mode = 'login';
+        link.innerText = "Pas de compte ? Créer une session"; pwd.autocomplete = "current-password";
+    }
+};
+
+window.handleAuth = async (e) => {
+    e.preventDefault();
+    const mode = document.getElementById('auth-btn').dataset.mode;
+    const email = document.getElementById('email').value;
+    const password = document.getElementById('password').value;
+    const rememberMe = document.getElementById('remember').checked;
+    const btn = document.getElementById('auth-btn');
+    const errorMsg = document.getElementById('error-msg');
+
+    btn.disabled = true; btn.innerText = "Chargement…";
+    errorMsg.innerText = "";
+
+    try {
+        const persistenceType = (rememberMe || window.navigator.standalone) ? browserLocalPersistence : browserSessionPersistence;
+        await setPersistence(auth, persistenceType);
+
+        if (rememberMe) localStorage.setItem('rememberedEmail', email);
+        else localStorage.removeItem('rememberedEmail');
+
+        const userCredential = mode === 'login'
+            ? await signInWithEmailAndPassword(auth, email, password)
+            : await createUserWithEmailAndPassword(auth, email, password);
+
+        await initializeUserDocument(userCredential.user);
+        window.location.href = "index.html";
+    } catch (err) {
+        btn.disabled = false;
+        btn.innerText = mode === 'login' ? "Se connecter" : "S’inscrire";
+        errorMsg.innerText = niceError(err);
+    }
+};
+</script>
+
+<style>
+:root{--accent:#4776E6;--violet:#8E54E9;--bg:#1A1D2B;--glass:rgba(255,255,255,.08);--line:rgba(255,255,255,.14);--text:#fff;--dim:#B4B8C6;--card:rgba(37,42,60,.72);color-scheme:dark;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+:root[data-theme=light]{--bg:#F4F5F9;--glass:rgba(255,255,255,.85);--line:rgba(0,0,0,.09);--text:#14151A;--dim:#6B6F7B;--card:rgba(255,255,255,.8);color-scheme:light}
+*{margin:0;padding:0;box-sizing:border-box;font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","Segoe UI",system-ui,sans-serif}
+html,body{min-height:100%}
+body{background:var(--bg);color:var(--text);min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;position:relative;overflow:hidden;-webkit-font-smoothing:antialiased;
+background-image:radial-gradient(circle at 0 0,rgba(71,118,230,.28),transparent 45%),radial-gradient(circle at 100% 100%,rgba(142,84,233,.26),transparent 45%)}
+.blob{position:fixed;border-radius:50%;filter:blur(70px);opacity:.45;z-index:0;animation:drift 14s ease-in-out infinite alternate}
+.b1{width:320px;height:320px;background:#4776E6;top:-90px;left:-80px}
+.b2{width:300px;height:300px;background:#8E54E9;bottom:-90px;right:-70px;animation-delay:-6s}
+@keyframes drift{from{transform:translate(0,0) scale(1)}to{transform:translate(50px,40px) scale(1.2)}}
+#th{position:fixed;top:calc(14px + env(safe-area-inset-top,0px));right:16px;z-index:2;background:var(--glass);border:1px solid var(--line);width:42px;height:42px;border-radius:14px;font-size:17px;cursor:pointer;backdrop-filter:blur(10px)}
+.card{position:relative;z-index:1;background:var(--card);border:1px solid var(--line);backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);border-radius:36px;padding:38px 28px 30px;width:100%;max-width:400px;text-align:center;box-shadow:0 40px 80px rgba(0,0,0,.25)}
+.logo{width:84px;height:84px;margin-bottom:20px;border-radius:22px;object-fit:cover;box-shadow:0 12px 28px rgba(71,118,230,.4)}
+h1{font-size:28px;font-weight:800;letter-spacing:-1px;margin-bottom:26px}
+input[type=email],input[type=password]{width:100%;padding:17px 18px;margin-bottom:12px;border:1px solid var(--line);border-radius:18px;font-size:16px;background:var(--glass);color:var(--text);outline:0;transition:.25s}
+input::placeholder{color:var(--dim)}
+input:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(71,118,230,.25)}
+.remember{display:flex;align-items:center;gap:10px;margin:4px 0 18px 4px;font-size:14px;color:var(--dim);cursor:pointer;text-align:left}
+input[type=checkbox]{accent-color:var(--accent);width:18px;height:18px}
+#auth-btn{width:100%;padding:17px;background:linear-gradient(120deg,#4776E6,#8E54E9,#E054C8,#4776E6);background-size:300% 300%;animation:flow 10s ease-in-out infinite;color:#fff;border:0;border-radius:20px;font-size:17px;font-weight:700;cursor:pointer;box-shadow:0 12px 28px rgba(71,118,230,.35);transition:transform .2s,opacity .2s}
+#auth-btn:active{transform:scale(.97)}#auth-btn:disabled{opacity:.7}
+@keyframes flow{0%,100%{background-position:0% 50%}50%{background-position:100% 50%}}
+.sep{display:flex;align-items:center;gap:12px;margin:18px 0 4px;color:var(--dim);font-size:13px}
+.sep::before,.sep::after{content:"";flex:1;height:1px;background:var(--line)}
+.google{width:100%;padding:15px;margin-top:12px;background:var(--glass);color:var(--text);border:1px solid var(--line);border-radius:20px;display:flex;align-items:center;justify-content:center;gap:12px;font-weight:600;font-size:15px;cursor:pointer;transition:transform .2s}
+.google:active{transform:scale(.97)}
+.toggle{margin-top:24px;display:block;color:var(--dim);font-size:14px;cursor:pointer;font-weight:500}
+.toggle:hover{color:var(--text)}
+#error-msg{color:#FF453A;font-size:13px;margin-top:14px;font-weight:500;min-height:1em}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<div class="blob b1"></div><div class="blob b2"></div>
+<button id="th" aria-label="Changer de thème">☀️</button>
+
+<div class="card">
+    <img src="logo.png" alt="Logo" class="logo">
+    <h1 id="auth-title">Bienvenue</h1>
+
+    <form onsubmit="handleAuth(event)">
+        <input type="email" id="email" placeholder="Adresse email" required autocomplete="email">
+        <input type="password" id="password" placeholder="Mot de passe" required autocomplete="current-password">
+        <label class="remember"><input type="checkbox" id="remember"> Se souvenir de moi</label>
+        <button type="submit" id="auth-btn" data-mode="login">Se connecter</button>
+    </form>
+
+    <div class="sep">ou</div>
+    <button class="google" onclick="loginWithGoogle()">
+        <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" width="20" alt="Google">
+        Continuer avec Google
+    </button>
+
+    <a class="toggle" id="auth-link" onclick="toggleAuth()">Pas de compte ? Créer une session</a>
+    <div id="error-msg"></div>
+</div>
+
+<script>
+/* Thème : même réglage que l'app (clé "theme" partagée) */
+(function(){
+  var b=document.getElementById('th');
+  function set(t){document.documentElement.dataset.theme=t;b.textContent=t==='dark'?'☀️':'🌙';try{localStorage.setItem('theme',t)}catch(e){}}
+  var s;try{s=localStorage.getItem('theme')}catch(e){}
+  set(s||(matchMedia('(prefers-color-scheme: light)').matches?'light':'dark'));
+  b.onclick=function(){set(document.documentElement.dataset.theme==='dark'?'light':'dark')};
+})();
+</script>
+</body>
+</html>

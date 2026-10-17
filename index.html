@@ -129,12 +129,23 @@ main{max-width:1100px;margin:0 auto;padding:0 20px}
 .xbtn{position:absolute;top:8px;right:14px;width:34px;height:34px;border-radius:50%;border:0;background:var(--glass);color:var(--dim);font-size:14px;z-index:3}
 .sheet>.ct{cursor:grab}
 @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+/* ---------- Icônes en trait ---------- */
+.ic{width:1em;height:1em;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;vertical-align:-.14em;flex:none}
+.tab .i{display:grid;place-items:center;margin-bottom:3px}
+.tab .i .ic{width:25px;height:25px}
+.ico{display:grid;place-items:center;color:var(--dim)}
+.ico .ic{width:20px;height:20px}
+.ct .ic,.lab .ic{margin-left:2px;opacity:.9}
+#th .ic{width:18px;height:18px;vertical-align:middle;color:var(--text)}
+.chips .ic{width:15px;height:15px;margin-right:4px;vertical-align:-.2em}
+.hb .ic{width:16px;height:16px;margin-right:4px;vertical-align:-.25em;color:var(--dim)}
+.tile .lab .ic{width:15px;height:15px;vertical-align:-.2em}
 </style>
 </head>
 <body>
 <header>
   <div class="pill"><div id="av" class="av">?</div><span id="who">Chargement…</span><span id="sv" class="save" title="Synchronisation"></span></div>
-  <div style="display:flex;gap:8px"><button class="quit" id="th" style="font-size:15px" aria-label="Changer de thème">☀️</button><button class="quit" id="quit">QUITTER</button></div>
+  <div style="display:flex;gap:8px"><button class="quit" id="th" aria-label="Changer de thème"></button><button class="quit" id="quit">QUITTER</button></div>
 </header>
 <div class="demo" id="demo" hidden><span>Mode démo : données fictives, rien n’est enregistré. Une fois en ligne avec Firebase, tes vraies données s’affichent automatiquement.</span></div>
 <main id="main">
@@ -148,15 +159,15 @@ main{max-width:1100px;margin:0 auto;padding:0 20px}
         <div class="meter"><i id="useBar" style="width:0"></i></div>
       </div>
       <div class="bento" style="margin-top:14px">
-        <div class="tile t-or" onclick="openM('m-cou')"><div class="lab">Courses 🛒</div><div class="v" id="cr">0,00 €</div><div class="meter"><i id="cBar" style="width:0"></i></div><div class="sub" id="cpct" style="font-size:12px;margin-top:6px"></div></div>
-        <div class="tile t-gr"><div class="lab">Épargne 📈</div><div class="v" id="sav">0 €</div><div id="spk"></div></div>
+        <div class="tile t-or" onclick="openM('m-cou')"><div class="lab">Courses <span data-ic="cart"></span></div><div class="v" id="cr">0,00 €</div><div class="meter"><i id="cBar" style="width:0"></i></div><div class="sub" id="cpct" style="font-size:12px;margin-top:6px"></div></div>
+        <div class="tile t-gr"><div class="lab">Épargne <span data-ic="trend"></span></div><div class="v" id="sav">0 €</div><div id="spk"></div></div>
       </div>
     </div>
     <div>
-      <div class="card"><div class="ct">Revenus 💼 <small id="s-revenus"></small></div><div id="l-revenus"></div><button class="add" onclick="add('revenus')">+ Ajouter un revenu</button></div>
-      <div class="card"><div class="ct">Charges fixes 🏠 <small id="s-charges"></small></div><div id="l-charges"></div><button class="add" onclick="add('charges')">+ Ajouter une charge</button></div>
-      <div class="card"><div class="ct">Budget courses 🛒 <small id="s-budget_courses"></small></div><div id="l-budget_courses"></div></div>
-      <div class="card"><div class="ct">Épargne du mois 💰 <small id="s-epargne"></small></div><div id="l-epargne"></div></div>
+      <div class="card"><div class="ct"><span>Revenus <span data-ic="briefcase"></span></span> <small id="s-revenus"></small></div><div id="l-revenus"></div><button class="add" onclick="add('revenus')">+ Ajouter un revenu</button></div>
+      <div class="card"><div class="ct"><span>Charges fixes <span data-ic="home"></span></span> <small id="s-charges"></small></div><div id="l-charges"></div><button class="add" onclick="add('charges')">+ Ajouter une charge</button></div>
+      <div class="card"><div class="ct"><span>Budget courses <span data-ic="cart"></span></span> <small id="s-budget_courses"></small></div><div id="l-budget_courses"></div></div>
+      <div class="card"><div class="ct"><span>Épargne du mois <span data-ic="wallet"></span></span> <small id="s-epargne"></small></div><div id="l-epargne"></div></div>
     </div>
   </div></section>
 
@@ -164,10 +175,10 @@ main{max-width:1100px;margin:0 auto;padding:0 20px}
 </main>
 
 <div class="tabs-wrap"><nav class="tabs">
-  <button class="tab on" id="t-home" onclick="show('home')"><span class="i">🏠</span>Accueil</button>
-  <button class="tab" id="t-stats" onclick="show('stats')"><span class="i">📊</span>Stats</button>
-  <button class="tab" onclick="openM('m-dep')"><span class="i">💸</span>Dépenses</button>
-  <button class="tab" onclick="openM('m-cou')"><span class="i">🛒</span>Courses</button>
+  <button class="tab on" id="t-home" onclick="show('home')"><span class="i" data-ic="home"></span>Accueil</button>
+  <button class="tab" id="t-stats" onclick="show('stats')"><span class="i" data-ic="chart"></span>Stats</button>
+  <button class="tab" onclick="openM('m-dep')"><span class="i" data-ic="card"></span>Dépenses</button>
+  <button class="tab" onclick="openM('m-cou')"><span class="i" data-ic="cart"></span>Courses</button>
 </nav></div>
 
 <div class="modal" id="m-dep"><div class="sheet"><div class="grab"></div><button class="xbtn" onclick="closeM()" aria-label="Fermer">✕</button>
@@ -194,10 +205,34 @@ let Y=now.getFullYear(),M=now.getMonth(),data={},user=null,db=null,demo=false,sa
 const key=(y=Y,m=M)=>`${y}_${MONTHS[m]}`;
 const cur=()=>data[key()];
 
+/* ---------- Icônes SVG en trait ---------- */
+const SV={
+home:'<path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V20a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V9.5"/>',
+chart:'<path d="M6 20V10M12 20V4M18 20v-7"/>',
+card:'<rect x="3" y="5" width="18" height="14" rx="3"/><path d="M3 10h18"/>',
+cart:'<circle cx="9" cy="20" r="1.5"/><circle cx="18" cy="20" r="1.5"/><path d="M2 3h3l2.7 12.4a1 1 0 0 0 1 .8h8.8a1 1 0 0 0 1-.8L20 7H6"/>',
+sun:'<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>',
+moon:'<path d="M20 14.5A8 8 0 0 1 9.5 4 8 8 0 1 0 20 14.5z"/>',
+briefcase:'<rect x="3" y="7" width="18" height="13" rx="2"/><path d="M9 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2M3 13h18"/>',
+trend:'<path d="M3 17l6-6 4 4 8-8"/><path d="M15 7h6v6"/>',
+wallet:'<path d="M3 7a2 2 0 0 1 2-2h13v4"/><path d="M3 7v11a2 2 0 0 0 2 2h14a1 1 0 0 0 1-1v-9a1 1 0 0 0-1-1H5a2 2 0 0 1-2-2z"/><circle cx="16" cy="14.5" r="1"/>',
+utensils:'<path d="M6 3v7a2 2 0 0 0 2 2v9M10 3v7a2 2 0 0 1-2 2M17 21V3c-2 1-3 4-3 8 0 2 1 3 3 3"/>',
+coffee:'<path d="M4 9h13v5a5 5 0 0 1-5 5H9a5 5 0 0 1-5-5V9zM17 10h1.5a2.5 2.5 0 0 1 0 5H17M8 3v3M12 3v3"/>',
+fuel:'<path d="M4 21V5a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v16M3 21h12M14 10h2a2 2 0 0 1 2 2v4a1.5 1.5 0 0 0 3 0V9l-3-3"/><path d="M7 8h4"/>',
+train:'<rect x="5" y="3" width="14" height="14" rx="3"/><path d="M5 11h14M9 21l2-4M15 21l-2-4"/>',
+film:'<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M8 4v16M16 4v16M3 9h5M3 15h5M16 9h5M16 15h5"/>',
+pill:'<rect x="2.5" y="8" width="19" height="8" rx="4" transform="rotate(-45 12 12)"/><path d="M8.5 8.5l7 7"/>',
+shirt:'<path d="M8 3 3 6l2 4 3-1v12h8V9l3 1 2-4-5-3a4 4 0 0 1-8 0z"/>',
+scissors:'<circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M8.5 8 20 19M8.5 16 20 5"/>',
+gift:'<rect x="3" y="8" width="18" height="4" rx="1"/><path d="M5 12v8h14v-8M12 8v12M12 8C9 8 8 4 10.5 4 12.5 4 12 8 12 8zM12 8c3 0 4-4 1.5-4C11.5 4 12 8 12 8z"/>',
+box:'<path d="M21 8 12 3 3 8v8l9 5 9-5zM3 8l9 5 9-5M12 13v8"/>'};
+const ic=n=>`<svg class="ic" viewBox="0 0 24 24" aria-hidden="true">${SV[n]||SV.card}</svg>`;
+
 /* ---------- Démarrage : Firebase si dispo, sinon démo ---------- */
-function setTheme(t){document.documentElement.dataset.theme=t;$('th').textContent=t==='dark'?'☀️':'🌙';try{localStorage.setItem('theme',t)}catch(e){}}
+function setTheme(t){document.documentElement.dataset.theme=t;$('th').innerHTML=ic(t==='dark'?'sun':'moon');try{localStorage.setItem('theme',t)}catch(e){}}
 $('th').onclick=()=>setTheme(document.documentElement.dataset.theme==='dark'?'light':'dark');
 function start(){
+document.querySelectorAll('[data-ic]').forEach(e=>e.innerHTML=ic(e.dataset.ic));
 let st;try{st=localStorage.getItem('theme')}catch(e){}
 setTheme(st||(matchMedia('(prefers-color-scheme: light)').matches?'light':'dark'));
 if(typeof firebase!=='undefined'){
@@ -302,8 +337,8 @@ function topCats(type,n=7){
   const c={};Object.values(data).forEach(d=>(d[type]||[]).forEach(i=>{const k=(i.category||'').trim();if(k&&k!=='Nouveau')c[k]=(c[k]||0)+1}));
   return Object.entries(c).sort((a,b)=>b[1]-a[1]).slice(0,n).map(x=>x[0]);
 }
-const ICONS=[[/resto|restau|burger|pizza|kebab|sushi/i,'🍽️'],[/caf[eé]|bar|biere|bière/i,'☕'],[/essence|carbu|gazole|parking|peage|péage/i,'⛽'],[/transport|train|bus|metro|métro|uber|taxi/i,'🚆'],[/cin[eé]|film|netflix|jeu|sortie/i,'🎬'],[/pharma|sant[eé]|m[eé]decin|dentiste/i,'💊'],[/v[eê]tement|zara|shoes|chaussure/i,'👕'],[/coiff|beaut[eé]/i,'💇'],[/cadeau/i,'🎁'],[/amazon|achat|shop/i,'📦'],[/courses|carrefour|leclerc|lidl|auchan/i,'🛒']];
-const icon=c=>(ICONS.find(x=>x[0].test(c))||[0,'💳'])[1];
+const ICONS=[[/resto|restau|burger|pizza|kebab|sushi/i,'utensils'],[/caf[eé]|bar|biere|bière/i,'coffee'],[/essence|carbu|gazole|parking|peage|péage/i,'fuel'],[/transport|train|bus|metro|métro|uber|taxi/i,'train'],[/cin[eé]|film|netflix|jeu|sortie/i,'film'],[/pharma|sant[eé]|m[eé]decin|dentiste/i,'pill'],[/v[eê]tement|zara|shoes|chaussure/i,'shirt'],[/coiff|beaut[eé]/i,'scissors'],[/cadeau/i,'gift'],[/amazon|achat|shop/i,'box'],[/courses|carrefour|leclerc|lidl|auchan/i,'cart']];
+const icon=c=>ic((ICONS.find(x=>x[0].test(c))||[0,'card'])[1]);
 
 /* ---------- Rendu ---------- */
 function num(el,v,f=fmt){const a=el._v||0;el._v=v;const t0=performance.now();const st=t=>{const p=Math.min(1,(t-t0)/450);el.textContent=f(a+(v-a)*(1-Math.pow(1-p,3)));if(p<1)requestAnimationFrame(st)};requestAnimationFrame(st)}

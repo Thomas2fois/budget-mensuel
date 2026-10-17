@@ -17,8 +17,9 @@ color-scheme:dark;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px)
 :root[data-theme=light]{--bg:#F4F5F9;--glass:rgba(255,255,255,.85);--line:rgba(0,0,0,.08);--text:#14151A;--dim:#6B6F7B;--sheet:#fff;--bar:rgba(255,255,255,.92);color-scheme:light}
 html{scroll-padding-top:env(safe-area-inset-top,0px)}
 *{margin:0;padding:0;box-sizing:border-box;font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","Segoe UI",system-ui,sans-serif}
-body{background:var(--bg);color:var(--text);min-height:100vh;padding-bottom:130px;-webkit-font-smoothing:antialiased;overflow-x:hidden;
-background-image:radial-gradient(circle at 0 0,rgba(71,118,230,.28),transparent 45%),radial-gradient(circle at 100% 100%,rgba(142,84,233,.26),transparent 45%);background-attachment:fixed}
+html{background:var(--bg)}
+body{background:transparent;color:var(--text);min-height:100vh;padding-bottom:130px;-webkit-font-smoothing:antialiased;overflow-x:hidden;}
+body::before{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;background:radial-gradient(circle at 0 0,rgba(71,118,230,.28),transparent 45%),radial-gradient(circle at 100% 100%,rgba(142,84,233,.26),transparent 45%)}
 body.lock{overflow:hidden}
 button{font:inherit;color:inherit;cursor:pointer}
 header{padding:22px 20px 6px;display:flex;justify-content:space-between;align-items:center;max-width:1100px;margin:0 auto}
@@ -80,9 +81,9 @@ main{max-width:1100px;margin:0 auto;padding:0 20px}
 .hb i{display:block;height:8px;border-radius:8px;background:linear-gradient(90deg,var(--red),var(--orange))}
 .modal{display:none;position:fixed;inset:0;z-index:2000;background:rgba(0,0,0,.6);backdrop-filter:blur(14px);align-items:flex-end;justify-content:center}
 .modal.open{display:flex}
-.sheet{background:var(--sheet);width:100%;max-width:520px;border-radius:34px 34px 0 0;padding:14px 22px calc(24px + env(safe-area-inset-bottom,0px));max-height:88dvh;overflow-y:auto;border-top:1px solid var(--line);animation:up .38s cubic-bezier(.16,1,.3,1)}
+.sheet{background:var(--sheet);width:100%;max-width:520px;border-radius:34px 34px 0 0;padding:14px 22px calc(24px + env(safe-area-inset-bottom,0px));max-height:88dvh;overflow:hidden;display:flex;flex-direction:column;position:relative;border-top:1px solid var(--line);animation:up .38s cubic-bezier(.16,1,.3,1)}
 @keyframes up{from{transform:translateY(100%)}to{transform:none}}
-.grab{width:42px;height:5px;border-radius:5px;background:var(--line);margin:0 auto 16px}
+.grab{width:42px;height:5px;border-radius:5px;background:var(--line);margin:0 auto 26px}
 .sheet h2{font-size:23px;letter-spacing:-.5px}
 .quick{display:flex;gap:8px;margin:14px 0 10px}
 .quick input{border:1px solid var(--line);background:var(--glass);color:var(--text);border-radius:14px;padding:14px;font-size:16px;outline:0;min-width:0}
@@ -123,6 +124,10 @@ main{max-width:1100px;margin:0 auto;padding:0 20px}
 .donut li em{white-space:nowrap;padding-left:10px;flex:none}
 .donut li i{flex:none;margin-top:5px}
 @media(min-width:620px){.donut{flex-direction:row;align-items:flex-start}.donut svg{position:sticky;top:16px}}
+.sheet>*{flex:none}
+.sheet>[id^=l-]{flex:1 1 auto;min-height:0;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;padding-bottom:8px}
+.xbtn{position:absolute;top:8px;right:14px;width:34px;height:34px;border-radius:50%;border:0;background:var(--glass);color:var(--dim);font-size:14px;z-index:3}
+.sheet>.ct{cursor:grab}
 @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 </style>
 </head>
@@ -165,12 +170,12 @@ main{max-width:1100px;margin:0 auto;padding:0 20px}
   <button class="tab" onclick="openM('m-cou')"><span class="i">🛒</span>Courses</button>
 </nav></div>
 
-<div class="modal" id="m-dep"><div class="sheet"><div class="grab"></div>
+<div class="modal" id="m-dep"><div class="sheet"><div class="grab"></div><button class="xbtn" onclick="closeM()" aria-label="Fermer">✕</button>
   <div class="ct"><h2>Dépenses du mois</h2><small id="tot-depenses" style="color:var(--red);font-size:18px"></small></div>
   <div class="quick"><input id="qc-depenses" placeholder="Quoi ?" enterkeyhint="next"><input id="qa-depenses" type="number" step="0.01" inputmode="decimal" placeholder="0,00"><button onclick="quick('depenses')" aria-label="Ajouter">＋</button></div>
   <div class="chips" id="chips-depenses"></div>
   <div id="l-depenses"></div><div class="spacer"></div></div></div>
-<div class="modal" id="m-cou"><div class="sheet"><div class="grab"></div>
+<div class="modal" id="m-cou"><div class="sheet"><div class="grab"></div><button class="xbtn" onclick="closeM()" aria-label="Fermer">✕</button>
   <div class="ct"><h2>Tickets de courses</h2><small id="tot-tickets_courses" style="color:var(--red);font-size:18px"></small></div>
   <div class="quick"><input id="qc-tickets_courses" placeholder="Magasin" enterkeyhint="next"><input id="qa-tickets_courses" type="number" step="0.01" inputmode="decimal" placeholder="0,00"><button onclick="quick('tickets_courses')" aria-label="Ajouter">＋</button></div>
   <div class="chips" id="chips-tickets_courses"></div>
@@ -209,7 +214,7 @@ if(typeof firebase!=='undefined'){
   data=demoData();boot();
 }
 }
-function boot(){initMonth(Y,M);render()}
+function boot(){initMonth(Y,M);render();setTimeout(unshift,50)}
 
 function demoData(){
   const d={};const r=(a,b)=>Math.round(a+Math.random()*(b-a));
@@ -407,7 +412,7 @@ const vv=window.visualViewport;
 function fitKb(){
   const m=document.querySelector('.modal.open');if(!m||!vv)return;
   m.style.top=vv.offsetTop+'px';m.style.height=vv.height+'px';m.style.bottom='auto';
-  const sh=m.querySelector('.sheet');sh.style.maxHeight=Math.max(240,vv.height-14)+'px';
+  const sh=m.querySelector('.sheet');const kb=window.innerHeight-vv.height>120;sh.style.maxHeight=Math.max(260,kb?vv.height-14:vv.height*.88)+'px';
   const a=document.activeElement;if(a&&sh.contains(a)&&a.tagName==='INPUT')a.scrollIntoView({block:'nearest'});
 }
 if(vv){vv.addEventListener('resize',fitKb);vv.addEventListener('scroll',fitKb)}
@@ -426,10 +431,14 @@ document.addEventListener('touchstart',e=>{const r=e.target.closest?.('.sheet .r
 document.addEventListener('touchmove',e=>{if(!rw)return;const dx=e.touches[0].clientX-rx,dy=e.touches[0].clientY-ry;if(dx<-12&&Math.abs(dx)>Math.abs(dy)){rd=dx;rw.style.transition='none';rw.style.transform=`translateX(${dx}px)`;rw.style.opacity=1+dx/300}},{passive:true});
 document.addEventListener('touchend',()=>{if(!rw)return;const r=rw;rw=null;r.style.transition='';if(rd<-110){r.style.transform='translateX(-110%)';r.style.opacity=0;buzz();setTimeout(()=>r.querySelector('.del')?.click(),200)}else{r.style.transform='';r.style.opacity=''}rd=0});
 /* tirer la poignée vers le bas = fermer la fenêtre */
-document.querySelectorAll('.grab').forEach(g=>{let y0=0,dy=0;const sh=g.closest('.sheet');
+document.querySelectorAll('.grab,.sheet>.ct').forEach(g=>{let y0=0,dy=0;const sh=g.closest('.sheet');
  g.addEventListener('touchstart',e=>{y0=e.touches[0].clientY;dy=0;sh.style.animation='none';sh.style.transition='none'},{passive:true});
  g.addEventListener('touchmove',e=>{dy=Math.max(0,e.touches[0].clientY-y0);sh.style.transform=`translateY(${dy}px)`},{passive:true});
  g.addEventListener('touchend',()=>{sh.style.transition='transform .25s';if(dy>110)closeM();sh.style.transform='';dy=0;setTimeout(()=>{sh.style.transition='';sh.style.animation=''},300)})});
+function unshift(){try{scrollTo(0,1);scrollTo(0,0)}catch(e){}}
+addEventListener('load',()=>{unshift();setTimeout(unshift,150);setTimeout(unshift,600)});
+addEventListener('pageshow',unshift);
+document.addEventListener('visibilitychange',()=>{if(!document.hidden)setTimeout(unshift,100)});
 start();
 </script>
 </body>

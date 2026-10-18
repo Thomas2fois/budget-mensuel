@@ -140,6 +140,9 @@ main{max-width:1100px;margin:0 auto;padding:0 20px}
 .chips .ic{width:15px;height:15px;margin-right:4px;vertical-align:-.2em}
 .hb .ic{width:16px;height:16px;margin-right:4px;vertical-align:-.25em;color:var(--dim)}
 .tile .lab .ic{position:static;left:auto;right:auto;bottom:auto;width:15px;height:15px;opacity:.9;vertical-align:-.2em}
+/* ---------- Ajout automatique : bouton + vert quand la ligne est prête ---------- */
+.quick button{transition:background .25s,transform .25s}
+.quick.ready button{background:var(--green);transform:scale(1.06)}
 </style>
 </head>
 <body>
@@ -298,13 +301,22 @@ function upd(type,i,f,v){
 }
 function togRec(type,i){const it=cur()[type][i];it.recurring=!it.recurring;it.recurring?propagate(type,it):unpropagate(type,it.category);buzz();save()}
 function add(type){cur()[type].push({category:"Nouveau",amount:0,recurring:false});save()}
-function quick(type){
+/* Ajout d’une ligne (dépenses / tickets) : montant obligatoire, nom facultatif.
+   Appelée par le bouton +, la touche Entrée, et automatiquement (voir bloc « Ajout automatique »). */
+function quick(type,refocus=true){
   const c=$('qc-'+type),a=$('qa-'+type);
   const amount=parseFloat(a.value);
-  if(!amount){a.focus();return}
-  cur()[type].push({category:c.value.trim()||(type==='tickets_courses'?'Courses':'Divers'),amount,recurring:false});
-  c.value='';a.value='';buzz();save();c.focus();
+  if(!amount){if(refocus)a.focus();return false}
+  const name=c.value.trim()||(type==='tickets_courses'?'Courses':'Divers');
+  const it={category:name,amount,recurring:false},k=key();
+  cur()[type].push(it);
+  c.value='';a.value='';c.closest('.quick').classList.remove('ready');
+  buzz();save();
+  toast(`Ajouté : ${name} ${fmt(amount)}`,()=>{const L=data[k][type],j=L.indexOf(it);if(j>-1){L.splice(j,1);save()}});
+  if(refocus)c.focus();
+  return true;
 }
+function flushQuick(){['depenses','tickets_courses'].forEach(t=>quick(t,false))}
 function del(type,i){
   const it=cur()[type][i];
   if(it.recurring)unpropagate(type,it.category);
@@ -383,7 +395,15 @@ function drawChips(){
     $('chips-'+t).innerHTML=topCats(t).map(c=>`<button onclick="pick('${t}','${esc(c).replace(/'/g,"\\'")}')">${t==='depenses'?icon(c)+' ':''}${esc(c)}</button>`).join('');
   });
 }
-function pick(t,c){$('qc-'+t).value=c;$('qa-'+t).focus()}
+/* Suggestion : si un montant est déjà saisi, la ligne est ajoutée tout de suite */
+function pick(t,c){
+  const n=$('qc-'+t),a=$('qa-'+t);
+  if(parseFloat(a.value)){
+    if(!n.value.trim()){n.value=c;quick(t,false);a.blur();return}
+    quick(t,false);
+  }
+  n.value=c;a.focus();
+}
 
 /* ---------- Graphiques SVG ---------- */
 function spark(v,w,h){
@@ -437,7 +457,7 @@ function renderStats(){
 /* ---------- Navigation & UI ---------- */
 function show(v){view=v;$('v-home').hidden=v!=='home';$('v-stats').hidden=v!=='stats';$('t-home').classList.toggle('on',v==='home');$('t-stats').classList.toggle('on',v==='stats');if(v==='stats')renderStats();scrollTo({top:0,behavior:'smooth'})}
 function openM(id){$(id).classList.add('open');document.body.classList.add('lock');buzz();fitKb()}
-function closeM(){document.querySelectorAll('.modal.open').forEach(m=>{m.classList.remove('open');m.style.top=m.style.height=m.style.bottom='';const sh=m.querySelector('.sheet');if(sh)sh.style.maxHeight=''});document.body.classList.remove('lock')}
+function closeM(){flushQuick();document.querySelectorAll('.modal.open').forEach(m=>{m.classList.remove('open');m.style.top=m.style.height=m.style.bottom='';const sh=m.querySelector('.sheet');if(sh)sh.style.maxHeight=''});document.body.classList.remove('lock')}
 document.querySelectorAll('.modal').forEach(m=>m.addEventListener('click',e=>{if(e.target===m)closeM()}));
 addEventListener('keydown',e=>{if(e.key==='Escape')closeM()});
 function buzz(){try{navigator.vibrate&&navigator.vibrate(8)}catch(e){}}
@@ -456,6 +476,24 @@ document.addEventListener('focusin',e=>{const sh=e.target.closest?.('.sheet');if
   setTimeout(()=>{fitKb();e.target.scrollIntoView({block:'nearest'})},350)});
 document.addEventListener('focusout',e=>{const sp=e.target.closest?.('.sheet')?.querySelector('.spacer');if(sp)sp.style.height='0'});
 document.querySelectorAll('.quick input').forEach(i=>i.addEventListener('keydown',e=>{if(e.key==='Enter'){const t=i.id.split('-').slice(1).join('-');if(i.id.startsWith('qc'))$('qa-'+t).focus();else quick(t)}}));
+/* ---------- Ajout automatique des lignes (dépenses / tickets) ---------- */
+document.querySelectorAll('.quick').forEach(q=>{
+  const t=q.querySelector('input').id.split('-').slice(1).join('-');
+  /* le focus quitte la ligne de saisie (✓ du clavier iPhone, autre champ…) */
+  q.addEventListener('focusout',()=>setTimeout(()=>{if(!q.contains(document.activeElement))quick(t,false)},0));
+  /* le bouton + passe au vert quand un montant est saisi */
+  q.addEventListener('input',()=>q.classList.toggle('ready',!!parseFloat($('qa-'+t).value)));
+  /* le bouton + ne vole pas le focus */
+  q.querySelector('button').addEventListener('mousedown',e=>e.preventDefault());
+});
+/* toucher ailleurs dans la fenêtre : iOS garde parfois le clavier ouvert */
+document.addEventListener('pointerdown',e=>{
+  const m=document.querySelector('.modal.open');if(!m)return;
+  const q=m.querySelector('.quick');
+  if(q.contains(e.target)||e.target.closest('.chips,.toast,.xbtn'))return;
+  const t=q.querySelector('input').id.split('-').slice(1).join('-');
+  if(quick(t,false)){const a=document.activeElement;if(a&&a.blur)a.blur()}
+},true);
 /* swipe gauche/droite = changer de mois */
 let sx=0,sy=0;const mn=$('main');
 mn.addEventListener('touchstart',e=>{sx=e.touches[0].clientX;sy=e.touches[0].clientY},{passive:true});

@@ -147,7 +147,8 @@ main{max-width:1100px;margin:0 auto;padding:0 20px}
 .hero::before{content:"";position:absolute;top:0;bottom:0;left:0;width:35%;pointer-events:none;background:linear-gradient(100deg,transparent,rgba(255,255,255,.35),transparent);transform:translateX(-150%) skewX(-20deg);animation:shine 5s ease-in-out infinite}
 @keyframes shine{0%{transform:translateX(-150%) skewX(-20deg)}45%,100%{transform:translateX(400%) skewX(-20deg)}}
 /* ---------- NOUVEAU : variation du mois sur la tuile Épargne ---------- */
-.delta{display:inline-block;margin-top:6px;font-size:12px;font-weight:800;background:rgba(255,255,255,.22);padding:3px 10px;border-radius:20px;font-variant-numeric:tabular-nums;position:relative;z-index:1}
+.delta{position:absolute;top:15px;right:14px;z-index:2;background:#fff;color:#0B6B43;font-size:12px;font-weight:700;padding:3px 9px;border-radius:20px;font-variant-numeric:tabular-nums;white-space:nowrap}
+.delta.neg{color:#C62828}
 .delta:empty{display:none}
 /* ---------- NOUVEAU : tuile Courses en dépassement ---------- */
 .t-or.over{background:linear-gradient(120deg,#FF453A,#C2185B,#FF375F,#FF453A);background-size:300% 300%}
@@ -399,7 +400,8 @@ function render(){
   num($('sav'),Math.round(cum(Y,M)),v=>Math.round(v).toLocaleString('fr-FR')+' €');
   /* Épargne : variation du mois */
   const dl=Math.round(s.ep);
-  $('sdelta').textContent=dl?`${dl>0?'+':'−'} ${Math.abs(dl).toLocaleString('fr-FR')} € ce mois`:'';
+  $('sdelta').textContent=dl?(dl>0?'+':'− ')+Math.abs(dl).toLocaleString('fr-FR')+' €':'';
+  $('sdelta').classList.toggle('neg',dl<0);
   $('spk').innerHTML=spark(series().map(x=>x.c),300,46);
   drawChips();
   if(view==='stats')renderStats();

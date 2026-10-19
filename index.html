@@ -143,6 +143,14 @@ main{max-width:1100px;margin:0 auto;padding:0 20px}
 /* ---------- Ajout automatique : bouton + vert quand la ligne est prête ---------- */
 .quick button{transition:background .25s,transform .25s}
 .quick.ready button{background:var(--green);transform:scale(1.06)}
+/* ---------- NOUVEAU : reflet qui passe sur « Disponible global » ---------- */
+.hero::before{content:"";position:absolute;top:0;bottom:0;left:0;width:35%;pointer-events:none;background:linear-gradient(100deg,transparent,rgba(255,255,255,.35),transparent);transform:translateX(-150%) skewX(-20deg);animation:shine 5s ease-in-out infinite}
+@keyframes shine{0%{transform:translateX(-150%) skewX(-20deg)}45%,100%{transform:translateX(400%) skewX(-20deg)}}
+/* ---------- NOUVEAU : variation du mois sur la tuile Épargne ---------- */
+.delta{display:inline-block;margin-top:6px;font-size:12px;font-weight:800;background:rgba(255,255,255,.22);padding:3px 10px;border-radius:20px;font-variant-numeric:tabular-nums;position:relative;z-index:1}
+.delta:empty{display:none}
+/* ---------- NOUVEAU : tuile Courses en dépassement ---------- */
+.t-or.over{background:linear-gradient(120deg,#FF453A,#C2185B,#FF375F,#FF453A);background-size:300% 300%}
 </style>
 </head>
 <body>
@@ -163,7 +171,7 @@ main{max-width:1100px;margin:0 auto;padding:0 20px}
       </div>
       <div class="bento" style="margin-top:14px">
         <div class="tile t-or" onclick="openM('m-cou')"><div class="lab">Courses <span data-ic="cart"></span></div><div class="v" id="cr">0,00 €</div><div class="meter"><i id="cBar" style="width:0"></i></div><div class="sub" id="cpct" style="font-size:12px;margin-top:6px"></div></div>
-        <div class="tile t-gr"><div class="lab">Épargne <span data-ic="trend"></span></div><div class="v" id="sav">0 €</div><div id="spk"></div></div>
+        <div class="tile t-gr"><div class="lab">Épargne <span data-ic="trend"></span></div><div class="v" id="sav">0 €</div><div class="delta" id="sdelta"></div><div id="spk"></div></div>
       </div>
     </div>
     <div>
@@ -382,10 +390,16 @@ function render(){
   $('useBar').style.width=Math.min(100,s.rev?s.out/s.rev*100:0)+'%';
   const ratio=s.rev?s.out/s.rev:(s.out?1:0);
   const hero=document.querySelector('.hero');hero.classList.toggle('bad',s.net<0);hero.classList.toggle('warn',s.net>=0&&ratio>.9);
-  $('cpct').textContent=s.bc?Math.round(s.tk/s.bc*100)+' % utilisé'+(s.tk>s.bc?' ⚠️':''):'';
+  /* Courses : plus de % ni de point d’exclamation */
+  const over=s.bc>0&&s.tk>s.bc;
+  $('cpct').textContent=s.bc?(over?'Budget dépassé':'sur '+fmt(s.bc)):'';
+  document.querySelector('.t-or').classList.toggle('over',over);
   num($('cr'),s.bc-s.tk);
   $('cBar').style.width=Math.min(100,s.bc?s.tk/s.bc*100:0)+'%';
   num($('sav'),Math.round(cum(Y,M)),v=>Math.round(v).toLocaleString('fr-FR')+' €');
+  /* Épargne : variation du mois */
+  const dl=Math.round(s.ep);
+  $('sdelta').textContent=dl?`${dl>0?'+':'−'} ${Math.abs(dl).toLocaleString('fr-FR')} € ce mois`:'';
   $('spk').innerHTML=spark(series().map(x=>x.c),300,46);
   drawChips();
   if(view==='stats')renderStats();

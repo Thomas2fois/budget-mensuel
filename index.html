@@ -143,14 +143,18 @@ main{max-width:1100px;margin:0 auto;padding:0 20px}
 /* ---------- Ajout automatique : bouton + vert quand la ligne est prête ---------- */
 .quick button{transition:background .25s,transform .25s}
 .quick.ready button{background:var(--green);transform:scale(1.06)}
-/* ---------- NOUVEAU : reflet qui passe sur « Disponible global » ---------- */
+/* ---------- Reflet qui passe sur « Disponible global » ---------- */
 .hero::before{content:"";position:absolute;top:0;bottom:0;left:0;width:35%;pointer-events:none;background:linear-gradient(100deg,transparent,rgba(255,255,255,.35),transparent);transform:translateX(-150%) skewX(-20deg);animation:shine 5s ease-in-out infinite}
 @keyframes shine{0%{transform:translateX(-150%) skewX(-20deg)}45%,100%{transform:translateX(400%) skewX(-20deg)}}
-/* ---------- NOUVEAU : variation du mois sur la tuile Épargne ---------- */
-.delta{position:absolute;top:15px;right:14px;z-index:2;background:#fff;color:#0B6B43;font-size:12px;font-weight:700;padding:3px 9px;border-radius:20px;font-variant-numeric:tabular-nums;white-space:nowrap}
+/* ---------- Tuile Épargne : titre à gauche, variation du mois toujours en haut à droite (sur la même ligne, sans chevauchement) ---------- */
+.lrow{display:flex;align-items:center;justify-content:space-between;gap:6px;min-height:24px;position:relative;z-index:2}
+.lrow .lab{white-space:nowrap;min-width:0}
+.delta{flex:none;background:#fff;color:#0B6B43;font-size:11px;font-weight:700;padding:3px 8px;border-radius:20px;font-variant-numeric:tabular-nums;white-space:nowrap}
 .delta.neg{color:#C62828}
 .delta:empty{display:none}
-/* ---------- NOUVEAU : tuile Courses en dépassement ---------- */
+/* sur petit écran, on retire la petite icône du titre pour laisser la place au badge */
+@media(max-width:430px){.t-gr .lab .ic{display:none}}
+/* ---------- Tuile Courses en dépassement ---------- */
 .t-or.over{background:linear-gradient(120deg,#FF453A,#C2185B,#FF375F,#FF453A);background-size:300% 300%}
 </style>
 </head>
@@ -172,7 +176,7 @@ main{max-width:1100px;margin:0 auto;padding:0 20px}
       </div>
       <div class="bento" style="margin-top:14px">
         <div class="tile t-or" onclick="openM('m-cou')"><div class="lab">Courses <span data-ic="cart"></span></div><div class="v" id="cr">0,00 €</div><div class="meter"><i id="cBar" style="width:0"></i></div><div class="sub" id="cpct" style="font-size:12px;margin-top:6px"></div></div>
-        <div class="tile t-gr"><div class="lab">Épargne <span data-ic="trend"></span></div><div class="v" id="sav">0 €</div><div class="delta" id="sdelta"></div><div id="spk"></div></div>
+        <div class="tile t-gr"><div class="lrow"><div class="lab">Épargne <span data-ic="trend"></span></div><div class="delta" id="sdelta"></div></div><div class="v" id="sav">0 €</div><div id="spk"></div></div>
       </div>
     </div>
     <div>

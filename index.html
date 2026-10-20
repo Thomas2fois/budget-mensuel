@@ -156,6 +156,50 @@ main{max-width:1100px;margin:0 auto;padding:0 20px}
 @media(max-width:430px){.t-gr .lab .ic{display:none}}
 /* ---------- Tuile Courses en dépassement ---------- */
 .t-or.over{background:linear-gradient(120deg,#FF453A,#C2185B,#FF375F,#FF453A);background-size:300% 300%}
+/* ================= NOËL · socle commun (décembre uniquement) ================= */
+#x-snow{position:fixed;left:0;top:0;width:100%;height:100%;z-index:900;pointer-events:none;display:none}
+#x-fx{position:fixed;left:0;top:0;width:100%;height:100%;z-index:2600;pointer-events:none}
+html.xmas .toast{width:max-content;max-width:88vw}
+@keyframes xtw{0%,100%{opacity:1}50%{opacity:.3}}
+@keyframes xpulse{0%,100%{transform:scale(1)}50%{transform:scale(1.07)}}
+@keyframes xspk{0%,100%{transform:scale(.3) rotate(0);opacity:.2}50%{transform:scale(1) rotate(45deg);opacity:1}}
+.xbadge,.xsp,.xcap{display:none}
+.xbadge{position:absolute;top:16px;right:16px;z-index:3;align-items:center;gap:6px;font-size:11.5px;font-weight:800;padding:5px 11px 5px 9px;border-radius:20px;background:rgba(255,255,255,.2);border:1px solid rgba(255,255,255,.38);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);color:#fff;pointer-events:none;white-space:nowrap}
+.xbadge .ic{width:13px;height:13px;fill:#FFE29A;stroke:#FFE29A}
+html.xmas .xbadge{display:flex}
+.xbadge:empty{display:none!important}
+.xsp{position:absolute;width:12px;height:12px;z-index:2;pointer-events:none;background:#FFF1B8;clip-path:polygon(50% 0,60% 38%,100% 50%,60% 62%,50% 100%,40% 62%,0 50%,40% 38%);animation:xspk 3.4s ease-in-out infinite}
+html.xmas .xsp{display:block}
+.xsp.s1{left:70%;top:48%}
+.xsp.s2{left:86%;top:64%;animation-delay:-1.2s;width:9px;height:9px}
+.xsp.s3{left:80%;top:30%;animation-delay:-2.1s;width:8px;height:8px}
+@keyframes xwob{0%,100%{transform:rotate(0)}25%{transform:rotate(-3deg)}75%{transform:rotate(3deg)}}
+.xwob{animation:xwob .5s ease-in-out}
+@keyframes xsh{25%{transform:translateX(-4px)}75%{transform:translateX(4px)}}
+/* ===== VERSION 1 · FÉERIE : rouge / vert / or, guirlande, neige, bonnet ===== */
+html.xmas-v1{--accent:#2FA866;--violet:#D23B47;--gold:#FFD36A}
+html.xmas-v1[data-theme=light]{--accent:#1E8A52;--violet:#C8303D;--gold:#B7791F}
+html.xmas-v1 body::before{background:radial-gradient(circle at 0 0,rgba(214,47,58,.26),transparent 45%),radial-gradient(circle at 100% 100%,rgba(31,157,98,.26),transparent 45%)}
+html.xmas-v1 .hero:not(.warn):not(.bad){background:linear-gradient(120deg,#0E6B47,#1FA463,#0B5C55,#0E6B47);background-size:300% 300%;box-shadow:0 20px 50px rgba(20,150,90,.3)}
+html.xmas-v1 .hero::before{background:linear-gradient(100deg,transparent,rgba(255,236,170,.5),transparent)}
+html.xmas-v1 .meter i{background:linear-gradient(90deg,#FFE9A8,#FFC83D)}
+html.xmas-v1 .tabs{border-color:rgba(255,205,100,.5);box-shadow:0 18px 50px rgba(0,0,0,.35),0 0 26px rgba(255,190,70,.2)}
+html.xmas-v1 .tab.on{color:var(--gold)}
+/* bonnet de Père Noël sur l'avatar */
+html.xmas-v1 .av{position:relative;overflow:visible}
+html.xmas-v1 .av::after{content:"";position:absolute;width:27px;height:23px;top:-13px;right:-9px;transform:rotate(17deg);background:var(--x-hat) center/contain no-repeat;pointer-events:none}
+/* petit sapin après le mois */
+html.xmas-v1 #ml::after{content:"";display:inline-block;width:.62em;height:.62em;margin-left:.28em;vertical-align:.04em;background:linear-gradient(135deg,#6BE3A0,#2FA866);-webkit-mask:var(--x-tree) center/contain no-repeat;mask:var(--x-tree) center/contain no-repeat}
+/* neige posée sur les cartes */
+html.xmas-v1 .card{position:relative}
+html.xmas-v1 .card::before{content:"";position:absolute;left:24px;right:24px;top:-7px;height:13px;background:var(--x-cap) center/100% 100% no-repeat;pointer-events:none;z-index:2}
+html.xmas-v1 .tile::after{content:"";position:absolute;left:0;top:0;width:100%;height:12px;background:var(--x-cap2) center/100% 100% no-repeat;pointer-events:none;z-index:2}
+html.xmas-v1 .hero>.xcap{display:block;position:absolute;left:0;top:0;width:100%;height:12px;background:var(--x-cap2) center/100% 100% no-repeat;pointer-events:none;z-index:2}
+/* traîneau du Père Noël */
+#x-sl{position:fixed;left:0;top:calc(env(safe-area-inset-top,0px) + 4px);width:78px;height:33px;z-index:1450;display:none;filter:drop-shadow(0 0 7px rgba(255,210,120,.75));cursor:pointer}
+#x-sl.go{display:block;animation:xfly 10s linear forwards}
+#x-sl svg{width:100%;height:100%;display:block}
+@keyframes xfly{0%{transform:translate(-160px,8px) rotate(4deg)}25%{transform:translate(25vw,-2px) rotate(-2deg)}50%{transform:translate(50vw,6px) rotate(3deg)}75%{transform:translate(75vw,-3px) rotate(-3deg)}100%{transform:translate(calc(100vw + 40px),4px) rotate(2deg)}}
 </style>
 </head>
 <body>
@@ -532,6 +576,119 @@ function unshift(){try{scrollTo(0,1);scrollTo(0,0)}catch(e){}}
 addEventListener('load',()=>{unshift();setTimeout(unshift,150);setTimeout(unshift,600)});
 addEventListener('pageshow',unshift);
 document.addEventListener('visibilitychange',()=>{if(!document.hidden)setTimeout(unshift,100)});
+/* ════════════════════════════════════════════════════════════
+   NOËL · socle commun — ne s’active QUE sur le mois de décembre.
+   Rien n’est déplacé dans la page : tout est superposé (fixed / absolute / pseudo-éléments).
+   ════════════════════════════════════════════════════════════ */
+const X={v:'v1',preview:false,sim:null,g:null,ready:false,addMsg:'',O:null,pvBtns:[]};
+X.now=()=>X.preview&&X.sim?new Date(X.sim):new Date();
+X.on=()=>M===11;
+X.rnd=(a,b)=>a+Math.random()*(b-a);
+X.pick=a=>a[Math.floor(Math.random()*a.length)];
+X.reduced=()=>matchMedia('(prefers-reduced-motion:reduce)').matches;
+X.dayN=()=>X.now().getDate();
+X.avail=()=>{const n=X.now(),a=new Date(Y,11,1),b=new Date(Y,11,31,23,59,59);return n<a?0:n>b?31:n.getDate()};
+X.toXmas=()=>{const n=X.now();return Math.round((new Date(Y,11,25)-new Date(n.getFullYear(),n.getMonth(),n.getDate()))/864e5)};
+X.label=()=>{const n=X.now();if(n.getFullYear()!==Y)return'';const d=X.toXmas();
+  if(d>45)return'';
+  if(d>1)return`J-${d} avant Noël`;if(d===1)return'Demain, c’est Noël';if(d===0)return'Joyeux Noël !';
+  const ny=Math.round((new Date(Y+1,0,1)-new Date(Y,11,n.getDate()))/864e5);
+  if(ny===1)return'Bonne année demain';return ny>1?`J-${ny} avant ${Y+1}`:''};
+X.XF=/noël|noel|sapin|déco|deco|réveillon|reveillon|bûche|buche|champagne|foie gras|huître|huitre|chocolat|cadeau|jouet/i;
+X.XG=/cadeau|jouet/i;
+X.phr=['Ho ho ho !','Le Père Noël approuve.','Belle attention !','Direction la hotte.','Ça va faire plaisir.'];
+X.tips=['Note tes cadeaux au fur et à mesure.','Compare 3 prix avant d’acheter.','Garde une petite marge pour l’imprévu.','Fait maison : moins cher, plus touchant.','Un Secret Santa, c’est 1 cadeau au lieu de 10.'];
+
+/* ---- icônes en trait (même style que les tiennes) ---- */
+Object.assign(SV,{
+ tree:'<path d="M12 3l-5 6h3l-4 5h4l-3 4h10l-3-4h4l-4-5h3z"/><path d="M12 18v3"/>',
+ star:'<path d="M12 3l2.7 5.6 6.1.8-4.5 4.3 1.1 6.1L12 16.9 6.6 19.8l1.1-6.1L3.2 9.4l6.1-.8z"/>',
+ wine:'<path d="M8 3h8l-.6 6a3.4 3.4 0 0 1-6.8 0z"/><path d="M12 12.5V20M8.5 21h7"/>',
+ lock:'<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/>',
+ check:'<path d="M5 12.5l4.5 4.5L19 7.5"/>'});
+ICONS.unshift([{test:c=>X.on()&&/noël|noel|sapin|déco|deco|réveillon|reveillon|bûche|buche/i.test(c)},'tree'],
+              [{test:c=>X.on()&&/champagne|\bvin\b|apéro|apero/i.test(c)},'wine']);
+
+/* ---- images embarquées (bonnet, flocon de neige, sapin) ---- */
+(()=>{const enc=s=>`url("data:image/svg+xml,${encodeURIComponent(s)}")`,st=document.documentElement.style;
+ st.setProperty('--x-hat',enc('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 34"><path d="M5 27C7 12 17 4 31 8c-4 3-5 8-5 19z" fill="#D62F3A"/><rect x="2" y="24" width="30" height="8" rx="4" fill="#fff"/><circle cx="33" cy="8" r="5" fill="#fff"/></svg>'));
+ st.setProperty('--x-cap',enc('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 16" preserveAspectRatio="none"><path d="M0 11C0 5 5 3 12 3C40 0 70 4 100 2C130 0 160 4 188 3C195 3 200 5 200 11C196 8 192 9 190 12C186 15 180 12 176 10C170 8 166 13 160 13C153 13 152 8 146 8C140 8 138 13 130 13C122 13 122 7 114 7C106 7 104 12 96 12C88 12 86 6 78 6C70 6 68 12 60 12C52 12 50 7 42 7C34 7 32 13 24 13C17 13 15 8 10 9C6 10 3 12 0 11Z" fill="#fff" stroke="rgba(110,140,200,.55)" stroke-width=".8"/></svg>'));
+ st.setProperty('--x-cap2',enc('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 16" preserveAspectRatio="none"><path d="M0 0H200V5C194 5 192 11 184 11C176 11 176 6 168 6C158 6 158 13 148 13C139 13 139 7 130 7C120 7 118 12 108 12C98 12 98 5 88 5C78 5 78 11 68 11C58 11 58 6 48 6C38 6 36 12 26 12C16 12 14 6 6 6C3 6 1 7 0 8Z" fill="#fff"/></svg>'));
+ st.setProperty('--x-tree',enc('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="#000" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l-5 6h3l-4 5h4l-3 4h10l-3-4h4l-4-5h3z"/><path d="M12 18v3"/></svg>'))})();
+
+/* ---- neige (canvas) ---- */
+X.S={cv:null,cx:null,f:[],raf:0,w:0,h:0,wind:0,t:0,cfg:null};
+X.snowSize=()=>{const S=X.S,d=Math.min(2,devicePixelRatio||1);S.w=innerWidth;S.h=innerHeight;S.cv.width=S.w*d;S.cv.height=S.h*d;S.cx.setTransform(d,0,0,d,0,0)};
+X.flake=init=>{const S=X.S,c=S.cfg,z=Math.random();return{x:X.rnd(0,S.w),y:init?X.rnd(0,S.h):X.rnd(-20,-4),z,r:c.sz[0]+(c.sz[1]-c.sz[0])*z,vy:c.sp[0]+(c.sp[1]-c.sp[0])*z,ph:X.rnd(0,6.28),sw:X.rnd(.3,1),ix:0,iy:0}};
+X.snowDraw=()=>{const S=X.S,cx=S.cx,light=document.documentElement.dataset.theme==='light';cx.clearRect(0,0,S.w,S.h);cx.fillStyle=light?'#7F9CD6':'#fff';
+  for(const f of S.f){cx.globalAlpha=.3+.6*f.z;cx.beginPath();cx.arc(f.x,f.y,f.r,0,6.283);cx.fill()}cx.globalAlpha=1};
+X.snowStep=ts=>{const S=X.S,dt=Math.min(2.5,(ts-(S.t||ts))/16.7);S.t=ts;S.wind*=.97;
+  for(const f of S.f){f.ph+=.012*dt;f.y+=(f.vy*(1+f.z)+f.iy)*dt;f.x+=(Math.sin(f.ph)*f.sw*.6+S.wind*(.4+f.z)+f.ix)*dt;f.iy*=.96;f.ix*=.96;
+    if(f.y>S.h+8)Object.assign(f,X.flake(false));if(f.x>S.w+8)f.x=-8;if(f.x<-8)f.x=S.w+8}
+  X.snowDraw()};
+X.snowOn=cfg=>{const S=X.S;if(S.raf)return;
+  S.cfg=Object.assign({n:innerWidth<520?55:100,sz:[1,3.2],sp:[.35,1]},cfg||{});
+  if(!S.cv){S.cv=document.createElement('canvas');S.cv.id='x-snow';document.body.appendChild(S.cv);S.cx=S.cv.getContext('2d');addEventListener('resize',()=>X.snowSize())}
+  X.snowSize();S.cv.style.display='block';S.f=Array.from({length:S.cfg.n},()=>X.flake(true));
+  if(X.reduced()){X.snowDraw();return}
+  const loop=ts=>{S.raf=requestAnimationFrame(loop);X.snowStep(ts)};S.raf=requestAnimationFrame(loop)};
+X.snowOff=()=>{const S=X.S;cancelAnimationFrame(S.raf);S.raf=0;if(S.cv)S.cv.style.display='none'};
+
+/* ---- confettis / étincelles / feux d’artifice (canvas au-dessus de tout) ---- */
+X.F={cv:null,cx:null,p:[],raf:0,w:0,h:0};
+X.fxInit=()=>{const F=X.F;if(F.cv)return;F.cv=document.createElement('canvas');F.cv.id='x-fx';document.body.appendChild(F.cv);F.cx=F.cv.getContext('2d');
+  const rs=()=>{const d=Math.min(2,devicePixelRatio||1);F.w=innerWidth;F.h=innerHeight;F.cv.width=F.w*d;F.cv.height=F.h*d;F.cx.setTransform(d,0,0,d,0,0)};rs();addEventListener('resize',rs)};
+X.burst=(x,y,o)=>{if(X.reduced())return;X.fxInit();const F=X.F;
+  o=Object.assign({n:46,cols:['#FF453A','#FFD60A','#32D74B','#4776E6','#fff'],dir:-Math.PI/2,spread:Math.PI*2,pw:[2,8],g:.2,life:[60,110],size:[5,9],shape:'rect',drag:.985},o||{});
+  for(let i=0;i<o.n;i++){const a=o.dir+X.rnd(-o.spread/2,o.spread/2),s=X.rnd(o.pw[0],o.pw[1]);
+    F.p.push({x,y,vx:Math.cos(a)*s,vy:Math.sin(a)*s,g:o.g,rot:X.rnd(0,6.28),vr:X.rnd(-.3,.3),sz:X.rnd(o.size[0],o.size[1]),c:X.pick(o.cols),l:0,L:X.rnd(o.life[0],o.life[1]),sh:o.shape,dr:o.drag})}
+  if(!F.raf)F.raf=requestAnimationFrame(X.fxStep)};
+X.fxStep=()=>{const F=X.F,cx=F.cx;cx.clearRect(0,0,F.w,F.h);F.p=F.p.filter(p=>p.l<p.L&&p.y<F.h+30);
+  for(const p of F.p){p.l++;p.vx*=p.dr;p.vy=p.vy*p.dr+p.g;p.x+=p.vx;p.y+=p.vy;p.rot+=p.vr;
+    cx.globalAlpha=Math.max(0,Math.min(1,(p.L-p.l)/25));cx.fillStyle=p.c;
+    if(p.sh==='dot'){cx.beginPath();cx.arc(p.x,p.y,p.sz/2.4,0,6.283);cx.fill()}
+    else{cx.save();cx.translate(p.x,p.y);cx.rotate(p.rot);cx.scale(1,Math.abs(Math.cos(p.rot*1.7))*.8+.2);cx.fillRect(-p.sz/2,-p.sz/3,p.sz,p.sz*.66);cx.restore()}}
+  cx.globalAlpha=1;F.raf=F.p.length?requestAnimationFrame(X.fxStep):0;if(!F.raf)cx.clearRect(0,0,F.w,F.h)};
+X.firework=(x,y)=>X.burst(x,y,{n:48,cols:X.pick([['#FFD36A','#fff'],['#FF5A6E','#FFD0D6'],['#6EA8FF','#fff'],['#6BE3A0','#fff']]),shape:'dot',pw:[1.5,6.5],g:.06,life:[55,90],size:[5,9],drag:.965});
+X.rain=()=>{for(let i=0;i<7;i++)setTimeout(()=>X.burst(X.rnd(0,innerWidth),-10,{n:26,dir:Math.PI/2,spread:Math.PI*.8,pw:[1,5],g:.1,life:[90,150]}),i*160)};
+
+/* ---- salutation du jour (une fois par jour) ---- */
+X.greetText=d=>d===24?'Joyeux réveillon !':d===25?'Joyeux Noël !':d===31?'Bonne fin d’année !':'Joyeuses fêtes !';
+X.greet=()=>{const k=X.now().toDateString();if(X.g===k)return;X.g=k;
+  if(!X.preview){try{if(localStorage.getItem('x_greet')===k)return;localStorage.setItem('x_greet',k)}catch(e){}}
+  const d=X.dayN();
+  setTimeout(()=>{if(!X.on())return;toast(X.greetExtra?X.greetExtra(d):X.greetText(d));if(d===24||d===25)X.rain()},700)};
+
+/* ---- branchements sur ton code existant (aucune fonction réécrite) ---- */
+const _render=render;render=function(){_render();X.sync()};
+const _toast=toast;toast=function(m,f){if(X.addMsg&&X.on())m+=X.addMsg;X.addMsg='';_toast(m,f)};
+const _quick=quick;quick=function(type,refocus){
+  const nm=($('qc-'+type).value||'').trim(),amt=parseFloat($('qa-'+type).value);
+  const fest=X.on()&&amt&&(X.XF.test(nm)||X.XG.test(nm));
+  if(fest&&X.phr.length)X.addMsg=' · '+X.pick(X.phr);
+  const r=_quick(type,refocus);
+  if(!r)X.addMsg='';
+  else if(fest&&X.onGift){const b=$('qa-'+type).closest('.quick').querySelector('button').getBoundingClientRect();X.onGift(b.left+b.width/2,b.top+b.height/2)}
+  return r};
+X.sync=()=>{const on=X.on(),h=document.documentElement;h.classList.toggle('xmas',on);h.classList.toggle('xmas-'+X.v,on);
+  if(on){if(!X.ready){X.ready=true;X.init()}X.update();X.run(true)}else X.run(false)};
+/* ===== VERSION 1 · FÉERIE (traîneau, neige, sans messages) ===== */
+X.v='v1';X.phr=[];X.greet=()=>{};
+X.SLEIGH='<svg viewBox="0 0 130 54" aria-hidden="true"><path d="M12 45h52q9 0 9-11" stroke="#FFD36A" stroke-width="2.6" stroke-linecap="round" fill="none"/><path d="M20 25h44c-1 12-8 19-20 19H30c-8 0-12-8-10-19z" fill="#D62F3A"/><path d="M22 30h40" stroke="#FFD36A" stroke-width="2"/><circle cx="42" cy="15" r="6" fill="#FFD7B5"/><path d="M35 14c1-9 11-12 17-4l-4 1-1 6z" fill="#E23B49"/><circle cx="53" cy="9.5" r="2.3" fill="#fff"/><path d="M37 17q5 9 10 0z" fill="#fff"/><rect x="35" y="21" width="14" height="6" rx="3" fill="#E23B49"/><path d="M73 33l19-4" stroke="#FFD36A" stroke-width="1.5"/><ellipse cx="102" cy="28" rx="11" ry="6.5" fill="#8A5A2E"/><circle cx="118" cy="18" r="4.6" fill="#8A5A2E"/><path d="M110 25l6-6" stroke="#8A5A2E" stroke-width="5" stroke-linecap="round"/><circle cx="122.4" cy="19.5" r="2" fill="#FF3B3B"/><path d="M116 14l-2-8M116 14l4-5M119 13l3-6" stroke="#6B4423" stroke-width="1.5" fill="none" stroke-linecap="round"/><path d="M95 33l-4 10M99 34l-2 10M108 34l3 9M112 32l5 8" stroke="#6B4423" stroke-width="2.2" stroke-linecap="round"/></svg>';
+X.fly=()=>{if(X.reduced())return;let s=$('x-sl');
+  if(!s){s=document.createElement('div');s.id='x-sl';s.innerHTML=X.SLEIGH;document.body.appendChild(s);
+    s.onclick=()=>{const r=s.getBoundingClientRect();X.burst(r.left+r.width/2,r.top+r.height/2,{n:56,cols:['#FFE29A','#FFB52E','#FF5A6E','#6BE3A0','#fff'],pw:[3,9],g:.22});buzz()};
+    s.addEventListener('animationend',()=>{s.classList.remove('go');clearInterval(X.tr)})}
+  s.classList.remove('go');void s.offsetWidth;s.classList.add('go');clearInterval(X.tr);
+  X.tr=setInterval(()=>{const r=s.getBoundingClientRect();if(r.right<0||r.left>innerWidth)return;X.burst(r.left+6,r.top+r.height*.6,{n:3,cols:['#FFE29A','#fff','#FFB52E'],shape:'dot',pw:[.2,1.4],g:.03,life:[25,45],size:[4,7]})},110)};
+X.init=()=>{document.querySelector('.hero').insertAdjacentHTML('beforeend','<div class="xcap"></div><i class="xsp s1"></i><i class="xsp s2"></i><i class="xsp s3"></i>')};
+X.update=()=>{};
+X.run=on=>{
+  if(on){X.snowOn({});if(!X.sT)X.sT=setTimeout(function f(){if(X.on())X.fly();X.sT=setTimeout(f,X.rnd(35e3,60e3))},3500)}
+  else{X.snowOff();clearTimeout(X.sT);X.sT=0;clearInterval(X.tr)}};
+X.onGift=(x,y)=>X.burst(x,y,{n:38,cols:['#fff','#FFE29A','#FFD36A','#D23B47','#2FA866'],pw:[2,6.5],g:.12,shape:'dot',size:[6,10]});
+X.pvBtns=[['Lancer le traîneau',()=>X.fly()]];X.pvNoDate=true;
+
 start();
 </script>
 </body>

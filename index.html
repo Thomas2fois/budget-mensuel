@@ -195,11 +195,23 @@ html.xmas-v1 .card{position:relative}
 html.xmas-v1 .card::before{content:"";position:absolute;left:24px;right:24px;top:-7px;height:13px;background:var(--x-cap) center/100% 100% no-repeat;pointer-events:none;z-index:2}
 html.xmas-v1 .tile::after{content:"";position:absolute;left:0;top:0;width:100%;height:12px;background:var(--x-cap2) center/100% 100% no-repeat;pointer-events:none;z-index:2}
 html.xmas-v1 .hero>.xcap{display:block;position:absolute;left:0;top:0;width:100%;height:12px;background:var(--x-cap2) center/100% 100% no-repeat;pointer-events:none;z-index:2}
-/* traîneau du Père Noël */
-#x-sl{position:fixed;left:0;top:calc(env(safe-area-inset-top,0px) + 4px);width:78px;height:33px;z-index:1450;display:none;filter:drop-shadow(0 0 7px rgba(255,210,120,.75));cursor:pointer}
-#x-sl.go{display:block;animation:xfly 10s linear forwards}
+/* traîneau du Père Noël (trajectoire calculée en JS) */
+#x-sl{position:fixed;left:0;top:env(safe-area-inset-top,0px);width:78px;height:33px;z-index:1450;display:none;filter:drop-shadow(0 0 7px rgba(255,210,120,.75));cursor:pointer;will-change:transform}
+#x-sl.go{display:block}
 #x-sl svg{width:100%;height:100%;display:block}
-@keyframes xfly{0%{transform:translate(-160px,8px) rotate(4deg)}25%{transform:translate(25vw,-2px) rotate(-2deg)}50%{transform:translate(50vw,6px) rotate(3deg)}75%{transform:translate(75vw,-3px) rotate(-3deg)}100%{transform:translate(calc(100vw + 40px),4px) rotate(2deg)}}
+/* lutin qui sort de la barre d'onglets, au-dessus d'Accueil */
+.xelf{display:none;position:absolute;left:8px;width:calc((100% - 22px)/4);bottom:calc(100% - 1px);height:56px;overflow:hidden;pointer-events:none;z-index:-1}
+html.xmas .xelf{display:block}
+html.xmas .tabs{position:relative}
+.xelf .xe{position:absolute;left:50%;bottom:0;width:38px;height:49px;margin-left:-19px;transform:translateY(110%);pointer-events:auto;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.xelf .xe svg{width:100%;height:100%;display:block;overflow:visible}
+.xelf.pop .xe{animation:xelf 3.6s cubic-bezier(.3,.9,.3,1) forwards}
+.xelf.pop .xarm{animation:xwave .38s ease-in-out .55s 5 alternate}
+.xarm{transform-origin:30px 44px}
+.xelf .xe.hop{animation:xhop .45s ease-out}
+@keyframes xelf{0%{transform:translateY(110%)}13%{transform:translateY(-3%)}19%{transform:translateY(0)}84%{transform:translateY(0)}100%{transform:translateY(112%)}}
+@keyframes xwave{from{transform:rotate(-14deg)}to{transform:rotate(22deg)}}
+@keyframes xhop{0%{transform:translateY(0)}40%{transform:translateY(-14px)}100%{transform:translateY(0)}}
 </style>
 </head>
 <body>
@@ -675,17 +687,51 @@ X.sync=()=>{const on=X.on(),h=document.documentElement;h.classList.toggle('xmas'
 /* ===== VERSION 1 · FÉERIE (traîneau, neige, sans messages) ===== */
 X.v='v1';X.phr=[];X.greet=()=>{};
 X.SLEIGH='<svg viewBox="0 0 130 54" aria-hidden="true"><path d="M12 45h52q9 0 9-11" stroke="#FFD36A" stroke-width="2.6" stroke-linecap="round" fill="none"/><path d="M20 25h44c-1 12-8 19-20 19H30c-8 0-12-8-10-19z" fill="#D62F3A"/><path d="M22 30h40" stroke="#FFD36A" stroke-width="2"/><circle cx="42" cy="15" r="6" fill="#FFD7B5"/><path d="M35 14c1-9 11-12 17-4l-4 1-1 6z" fill="#E23B49"/><circle cx="53" cy="9.5" r="2.3" fill="#fff"/><path d="M37 17q5 9 10 0z" fill="#fff"/><rect x="35" y="21" width="14" height="6" rx="3" fill="#E23B49"/><path d="M73 33l19-4" stroke="#FFD36A" stroke-width="1.5"/><ellipse cx="102" cy="28" rx="11" ry="6.5" fill="#8A5A2E"/><circle cx="118" cy="18" r="4.6" fill="#8A5A2E"/><path d="M110 25l6-6" stroke="#8A5A2E" stroke-width="5" stroke-linecap="round"/><circle cx="122.4" cy="19.5" r="2" fill="#FF3B3B"/><path d="M116 14l-2-8M116 14l4-5M119 13l3-6" stroke="#6B4423" stroke-width="1.5" fill="none" stroke-linecap="round"/><path d="M95 33l-4 10M99 34l-2 10M108 34l3 9M112 32l5 8" stroke="#6B4423" stroke-width="2.2" stroke-linecap="round"/></svg>';
-X.fly=()=>{if(X.reduced())return;let s=$('x-sl');
+/* le traîneau ne vole que sur l'onglet Accueil, sans fenêtre ouverte */
+X.canFly=()=>X.on()&&view==='home'&&!document.hidden&&!document.querySelector('.modal.open');
+X.stopFly=()=>{const s=$('x-sl');clearInterval(X.tr);if(X.fa){try{X.fa.cancel()}catch(e){}X.fa=null}if(s)s.classList.remove('go')};
+/* trajectoire : hauteur de départ/arrivée aléatoires + courbe (arc, S ou vague), sens aléatoire */
+X.path=()=>{
+  const W=innerWidth,H=innerHeight,sw=78,sh=33,minY=6,maxY=Math.max(minY+40,H-170-sh);
+  const dir=Math.random()<.5?1:-1,x0=-sw-24,x1=W+24;
+  const y0=X.rnd(minY,maxY),y1=X.rnd(minY,maxY);
+  const k=X.pick([1,1.5,2,3]),A=X.rnd(14,Math.min(70,(maxY-minY)/2)),ph=X.rnd(0,6.283)*(k===1?0:1);
+  const N=48,pts=[];
+  for(let i=0;i<N;i++){const t=i/(N-1),e=t*t*(3-2*t);
+    let y=y0+(y1-y0)*e+A*Math.sin(Math.PI*k*t+ph)*Math.sin(Math.PI*t)*1.2;
+    y=Math.max(minY,Math.min(maxY,y));pts.push({x:x0+(x1-x0)*t,y})}
+  const kf=pts.map((p,i)=>{const q=pts[Math.min(N-1,i+1)],o=pts[Math.max(0,i-1)];
+    const ang=Math.max(-24,Math.min(24,Math.atan2(q.y-o.y,Math.abs(q.x-o.x))*57.3*.8));
+    const px=dir===1?p.x:W-p.x-sw;
+    return{transform:`translate(${px.toFixed(1)}px,${p.y.toFixed(1)}px) rotate(${(dir*ang).toFixed(1)}deg) scaleX(${dir})`,offset:i/(N-1)}});
+  return{kf,dir}};
+X.fly=()=>{if(X.reduced()||!X.canFly()||X.fa)return;let s=$('x-sl');
   if(!s){s=document.createElement('div');s.id='x-sl';s.innerHTML=X.SLEIGH;document.body.appendChild(s);
-    s.onclick=()=>{const r=s.getBoundingClientRect();X.burst(r.left+r.width/2,r.top+r.height/2,{n:56,cols:['#FFE29A','#FFB52E','#FF5A6E','#6BE3A0','#fff'],pw:[3,9],g:.22});buzz()};
-    s.addEventListener('animationend',()=>{s.classList.remove('go');clearInterval(X.tr)})}
-  s.classList.remove('go');void s.offsetWidth;s.classList.add('go');clearInterval(X.tr);
-  X.tr=setInterval(()=>{const r=s.getBoundingClientRect();if(r.right<0||r.left>innerWidth)return;X.burst(r.left+6,r.top+r.height*.6,{n:3,cols:['#FFE29A','#fff','#FFB52E'],shape:'dot',pw:[.2,1.4],g:.03,life:[25,45],size:[4,7]})},110)};
-X.init=()=>{document.querySelector('.hero').insertAdjacentHTML('beforeend','<div class="xcap"></div><i class="xsp s1"></i><i class="xsp s2"></i><i class="xsp s3"></i>')};
+    s.onclick=()=>{const r=s.getBoundingClientRect();X.burst(r.left+r.width/2,r.top+r.height/2,{n:56,cols:['#FFE29A','#FFB52E','#FF5A6E','#6BE3A0','#fff'],pw:[3,9],g:.22});buzz()}}
+  const {kf,dir}=X.path();
+  s.style.transform=kf[0].transform;s.classList.add('go');
+  const a=X.fa=s.animate(kf,{duration:X.rnd(6e3,7.5e3),easing:'linear',fill:'forwards'});
+  a.onfinish=()=>{s.classList.remove('go');X.fa=null;clearInterval(X.tr)};
+  clearInterval(X.tr);
+  X.tr=setInterval(()=>{if(!X.canFly()){X.stopFly();return}
+    const r=s.getBoundingClientRect();if(r.right<0||r.left>innerWidth)return;
+    X.burst(dir===1?r.left+6:r.right-6,r.top+r.height*.6,{n:3,cols:['#FFE29A','#fff','#FFB52E'],shape:'dot',pw:[.2,1.4],g:.03,life:[25,45],size:[4,7]})},110)};
+/* lutin : sort de la barre d'onglets, au-dessus d'Accueil, fait coucou puis redescend */
+X.ELF='<svg viewBox="0 0 40 52" aria-hidden="true"><path d="M11 30L2 25l9 11zM29 30l9-5-9 11z" fill="#FFD7B5"/><path d="M9 52v-6q0-6 11-6t11 6v6z" fill="#D62F3A"/><path d="M14 41l3 3 3-3 3 3 3-3" stroke="#fff" stroke-width="2" fill="none" stroke-linejoin="round"/><circle cx="20" cy="31" r="9.5" fill="#FFD7B5"/><path d="M9 24Q11 7 31 3Q26 11 31 24z" fill="#2FA866"/><rect x="8" y="21" width="24" height="5.5" rx="2.7" fill="#D62F3A"/><circle cx="31.5" cy="4" r="3.6" fill="#FFD36A"/><circle cx="16.5" cy="31" r="1.3" fill="#3a2a20"/><circle cx="23.5" cy="31" r="1.3" fill="#3a2a20"/><circle cx="14" cy="34.5" r="1.9" fill="#FF8FA0" opacity=".6"/><circle cx="26" cy="34.5" r="1.9" fill="#FF8FA0" opacity=".6"/><path d="M16.5 35.5q3.5 3.6 7 0" stroke="#3a2a20" stroke-width="1.3" fill="none" stroke-linecap="round"/><g class="xarm"><path d="M30 45Q37 42 36.5 33" stroke="#D62F3A" stroke-width="5" fill="none" stroke-linecap="round"/><circle cx="36.5" cy="31" r="3.2" fill="#FFD7B5"/></g></svg>';
+X.elf=()=>{if(X.reduced()||!X.canFly())return;const c=document.querySelector('.xelf');if(!c||c.classList.contains('pop'))return;
+  c.classList.add('pop');clearTimeout(X.elT);X.elT=setTimeout(()=>c.classList.remove('pop'),3700)};
+X.init=()=>{document.querySelector('.hero').insertAdjacentHTML('beforeend','<div class="xcap"></div><i class="xsp s1"></i><i class="xsp s2"></i><i class="xsp s3"></i>');
+  const t=document.querySelector('.tabs');if(!t)return;
+  t.insertAdjacentHTML('afterbegin','<div class="xelf"><div class="xe">'+X.ELF+'</div></div>');
+  const e=t.querySelector('.xe');
+  e.onclick=ev=>{ev.stopPropagation();const r=e.getBoundingClientRect();e.classList.remove('hop');void e.offsetWidth;e.classList.add('hop');
+    X.burst(r.left+r.width/2,r.top+8,{n:26,cols:['#FFE29A','#FFD36A','#D23B47','#2FA866','#fff'],pw:[2,6],g:.14,shape:'dot',size:[5,9]});buzz()}};
 X.update=()=>{};
 X.run=on=>{
-  if(on){X.snowOn({});if(!X.sT)X.sT=setTimeout(function f(){if(X.on())X.fly();X.sT=setTimeout(f,X.rnd(35e3,60e3))},3500)}
-  else{X.snowOff();clearTimeout(X.sT);X.sT=0;clearInterval(X.tr)}};
+  if(on){X.snowOn({});
+    if(!X.sT)X.sT=setTimeout(function f(){X.fly();X.sT=setTimeout(f,1e4)},2500);
+    if(!X.eT)X.eT=setTimeout(function g(){X.elf();X.eT=setTimeout(g,X.rnd(16e3,26e3))},6e3)}
+  else{X.snowOff();clearTimeout(X.sT);X.sT=0;clearTimeout(X.eT);X.eT=0;X.stopFly()}};
 X.onGift=(x,y)=>X.burst(x,y,{n:38,cols:['#fff','#FFE29A','#FFD36A','#D23B47','#2FA866'],pw:[2,6.5],g:.12,shape:'dot',size:[6,10]});
 X.pvBtns=[['Lancer le traîneau',()=>X.fly()]];X.pvNoDate=true;
 

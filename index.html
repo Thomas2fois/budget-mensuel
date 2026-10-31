@@ -565,7 +565,7 @@ document.querySelectorAll('.quick').forEach(q=>{
 /* toucher ailleurs dans la fenêtre : iOS garde parfois le clavier ouvert */
 document.addEventListener('pointerdown',e=>{
   const m=document.querySelector('.modal.open');if(!m)return;
-  const q=m.querySelector('.quick');
+  const q=m.querySelector('.quick');if(!q)return;
   if(q.contains(e.target)||e.target.closest('.chips,.toast,.xbtn'))return;
   const t=q.querySelector('input').id.split('-').slice(1).join('-');
   if(quick(t,false)){const a=document.activeElement;if(a&&a.blur)a.blur()}
@@ -738,5 +738,6 @@ X.pvBtns=[['Lancer le traîneau',()=>X.fly()]];X.pvNoDate=true;
 start();
 </script>
 <script src="noel-cadeaux.js"></script>
+<script src="pea.js"></script>
 </body>
 </html>
